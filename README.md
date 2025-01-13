@@ -53,6 +53,11 @@ The model effectively generated clear, hand-drawn-style sketches with high visua
 Final sketches showcased intricate line details and shading, closely resembling traditional pencil sketches.
 
 The approach demonstrated promising potential for applications in creative AI, portrait rendering, and more.
+Input Image:
+![fantasy-2049567](https://github.com/user-attachments/assets/c99a5308-c6ce-4866-8cd6-230c269cfd5f)
+
+Output Sketch:
+![hand-drawn-sketch](https://github.com/user-attachments/assets/47a7cb65-61f7-41e1-be80-01d5491c5ee3)
 
 
 
