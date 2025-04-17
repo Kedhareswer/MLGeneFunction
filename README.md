@@ -1,4 +1,32 @@
-# Image to Sketch Model 
+# Hand-Drawn Sketch Generator
+
+## Overview
+This project provides a web-based tool to convert uploaded images into hand-drawn sketches. Users can customize the sketch style and adjust various parameters to achieve different artistic effects.
+
+## Features
+- **Multiple Sketch Styles**: Choose from pencil, charcoal, or detailed sketch styles
+- **Customizable Parameters**: Adjust line strength, detail level, and shading intensity
+- **Real-time Preview**: See the sketch result immediately after uploading an image
+- **Download Functionality**: Save the generated sketch as a PNG file
+
+## Usage
+1. Open the application in your web browser
+2. Upload an image file using the file input
+3. Adjust the sketch parameters using the sliders and style selector
+4. Click 'Generate Sketch' to see the result
+5. Use 'Download Sketch' to save your creation
+
+## Customization Options
+- **Sketch Style**: Select from pencil, charcoal, or detailed styles
+- **Line Strength**: Control the intensity of lines in the sketch
+- **Detail Level**: Adjust the amount of detail in the sketch
+- **Shading Intensity**: Modify the shading effect in the sketch
+
+## Requirements
+- Modern web browser with JavaScript enabled
+
+## Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 Welcome to the Image-to-Sketch Conversion project! This project explores the use of deep learning techniques to transform digital images into realistic, hand-drawn sketches. Utilizing the CUHK Face Sketch Database (CUFS), we developed a model capable of producing high-quality, sketch-style renditions of digital images.
 
