@@ -48,12 +48,6 @@ export default function ConvertPage() {
   }
 
   const handleProcessImage = async () => {
-    // Only allow area selection generation if feature is enabled (currently not implemented)
-    if (selectionMode && selections.length > 0) {
-      // Do nothing here; handled by handleGenerateWithSelectedAreas
-      return
-    }
-
     if (!image) return
 
     setIsProcessing(true)
@@ -198,15 +192,6 @@ export default function ConvertPage() {
     }
   }
 
-  // Show 'Feature Coming Soon' toast for area selection mode
-  const handleGenerateWithSelectedAreas = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Generating with selected areas is coming soon! Stay tuned.",
-      variant: "default",
-    })
-  }
-
   return (
     <div className="container py-8 md:py-12">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -304,7 +289,7 @@ export default function ConvertPage() {
                     <Button onClick={handleProcessImage}>Generate Sketch</Button>
                   )}
                   {selectionMode && selections.length > 0 && (
-                    <Button onClick={handleGenerateWithSelectedAreas}>Generate with Selected Areas</Button>
+                    <Button onClick={handleProcessImage}>Generate with Selected Areas</Button>
                   )}
 
                   {sketch && !selectionMode && (
@@ -692,12 +677,12 @@ async function simulateImageProcessingWithSelections(
 
         // Apply the selection's style
         applySketchEffect(tempCtx, tempCanvas.width, tempCanvas.height, {
-          style: selection.style,
-          lineStrength: selection.settings?.lineStrength ?? defaultSettings.lineStrength,
-          detail: selection.settings?.detail ?? defaultSettings.detail,
-          shading: selection.settings?.shading ?? defaultSettings.shading,
-          ...selection.settings,
-        })
+  style: selection.style,
+  lineStrength: selection.settings?.lineStrength ?? 5,
+  detail: selection.settings?.detail ?? 5,
+  shading: selection.settings?.shading ?? 5,
+  ...selection.settings,
+})
 
         // Apply blending based on selection's blend mode and radius
         applyBlendedSelection(ctx, tempCanvas, selection)

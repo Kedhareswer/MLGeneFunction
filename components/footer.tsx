@@ -40,9 +40,6 @@ export function Footer() {
           <p className="text-center text-sm text-muted-foreground md:text-left">
             &copy; {new Date().getFullYear()} Image to Sketch. All rights reserved.
           </p>
-          <p className="text-center text-sm text-muted-foreground md:text-left mt-4 md:mt-0">
-            Built with Next.js and Tailwind CSS.
-          </p>
         </div>
       </div>
     </footer>
