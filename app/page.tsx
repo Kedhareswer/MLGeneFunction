@@ -56,25 +56,6 @@ export default function Home() {
                       alt="Example of an image transformed into a sketch"
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-background/20" />
-                    {/* Remove the SVG overlay */}
-                    {/* <div className="absolute inset-0 flex items-center justify-center">
-                      <svg
-                        className="h-24 w-24 text-primary/30 sketch-line animate-sketch-draw"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-                        <path d="M17.879 7.879A6 6 0 0 0 8.12 17.637" />
-                        <path d="M12 6v2" />
-                        <path d="M6 12h2" />
-                        <path d="M8 17l1.5-1.5" />
-                      </svg>
-                    </div> */}
                   </div>
                 </div>
               </div>

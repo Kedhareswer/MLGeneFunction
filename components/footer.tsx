@@ -33,25 +33,12 @@ export function Footer() {
             </div>
           </div>
 
-          {/* <div className="flex flex-col space-y-4">
-            <h3 className="text-lg font-medium">Connect</h3>
-            <div className="flex space-x-4">
-              <Link href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub">
-                <Github className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              </Link>
-              <Link href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter">
-                <Twitter className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              </Link>
-              <Link href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram">
-                <Instagram className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              </Link>
-            </div>
-          </div> */}
+
         </div>
 
         <div className="mt-8 border-t pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-center text-sm text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} ArtifyAI. All rights reserved.
+            &copy; {new Date().getFullYear()} Image to Sketch. All rights reserved.
           </p>
           <p className="text-center text-sm text-muted-foreground md:text-left mt-4 md:mt-0">
             Built with Next.js and Tailwind CSS.

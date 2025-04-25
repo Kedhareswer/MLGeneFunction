@@ -6,13 +6,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { ImageUploader } from "@/components/image-uploader"
 import { SkeletonLoader } from "@/components/skeleton-loader"
-import { Download, RefreshCw, Share2 } from "lucide-react"
+import { Download, RefreshCw, Share2, Scissors } from "lucide-react"
 import { ShareButtons } from "@/components/share-buttons"
 import { useToast } from "@/hooks/use-toast"
 import { ProgressIndicator } from "@/components/progress-indicator"
 import { ImageComparison } from "@/components/image-comparison"
+import { AreaSelector, type Selection } from "@/components/area-selector"
 
 export default function ConvertPage() {
   const [image, setImage] = useState<string | null>(null)
@@ -23,14 +25,26 @@ export default function ConvertPage() {
     lineStrength: 50,
     detail: 50,
     shading: 30,
+    // Style-specific settings
+    pencilHardness: 3, // 1-5 (soft to hard)
+    charcoalTexture: 50, // Texture grain
+    detailedDensity: 50, // Line density
+    crosshatchAngle: 45, // Angle variation
+    inkTexture: 50, // Brush texture
+    woodcutBoldness: 50, // Edge boldness
+    etchingDepth: 50, // Line depth
+    conteSoftness: 50, // Softness of strokes
   })
   const { toast } = useToast()
   const [isSharing, setIsSharing] = useState(false)
   const [comparisonMode, setComparisonMode] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selections, setSelections] = useState<Selection[]>([])
 
   const handleImageUpload = (imageDataUrl: string) => {
     setImage(imageDataUrl)
     setSketch(null)
+    setSelections([])
   }
 
   const handleProcessImage = async () => {
@@ -41,8 +55,14 @@ export default function ConvertPage() {
     // Simulate processing delay
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Process the image (in a real app, this would call an API)
-    const processedSketch = await simulateImageProcessing(image, settings)
+    // Process the image with selections or as a whole
+    let processedSketch
+
+    if (selections.length > 0) {
+      processedSketch = await simulateImageProcessingWithSelections(image, selections, settings)
+    } else {
+      processedSketch = await simulateImageProcessing(image, settings)
+    }
 
     setSketch(processedSketch)
     setIsProcessing(false)
@@ -55,7 +75,7 @@ export default function ConvertPage() {
     }))
 
     // If we already have a sketch, update it when settings change
-    if (sketch && image) {
+    if (sketch && image && !selectionMode) {
       setIsProcessing(true)
 
       // Simulate processing delay
@@ -85,11 +105,20 @@ export default function ConvertPage() {
   const handleReset = () => {
     setImage(null)
     setSketch(null)
+    setSelections([])
     setSettings({
       style: "pencil",
       lineStrength: 50,
       detail: 50,
       shading: 30,
+      pencilHardness: 3,
+      charcoalTexture: 50,
+      detailedDensity: 50,
+      crosshatchAngle: 45,
+      inkTexture: 50,
+      woodcutBoldness: 50,
+      etchingDepth: 50,
+      conteSoftness: 50,
     })
   }
 
@@ -120,6 +149,49 @@ export default function ConvertPage() {
     setComparisonMode((prev) => !prev)
   }
 
+  const toggleSelectionMode = () => {
+    setSelectionMode((prev) => !prev)
+
+    // If turning off selection mode and we have selections, process the image
+    if (selectionMode && selections.length > 0 && image && !isProcessing) {
+      handleProcessImage()
+    }
+  }
+
+  const handleSelectionsChange = (newSelections: Selection[]) => {
+    setSelections(newSelections)
+  }
+
+  // Get current settings for the selected style
+  const getCurrentSettings = () => {
+    const baseSettings = {
+      lineStrength: settings.lineStrength,
+      detail: settings.detail,
+      shading: settings.shading,
+    }
+
+    switch (settings.style) {
+      case "pencil":
+        return { ...baseSettings, pencilHardness: settings.pencilHardness }
+      case "charcoal":
+        return { ...baseSettings, charcoalTexture: settings.charcoalTexture }
+      case "detailed":
+        return { ...baseSettings, detailedDensity: settings.detailedDensity }
+      case "crosshatch":
+        return { ...baseSettings, crosshatchAngle: settings.crosshatchAngle }
+      case "ink":
+        return { ...baseSettings, inkTexture: settings.inkTexture }
+      case "woodcut":
+        return { ...baseSettings, woodcutBoldness: settings.woodcutBoldness }
+      case "etching":
+        return { ...baseSettings, etchingDepth: settings.etchingDepth }
+      case "conte":
+        return { ...baseSettings, conteSoftness: settings.conteSoftness }
+      default:
+        return baseSettings
+    }
+  }
+
   return (
     <div className="container py-8 md:py-12">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -136,49 +208,91 @@ export default function ConvertPage() {
               <ImageUploader onImageUpload={handleImageUpload} />
             ) : (
               <div className="space-y-6">
-                {image && !sketch && (
+                {image && !sketch && !selectionMode && (
                   <div className="mb-4 animate-fade-in">
                     <ProgressIndicator isProcessing={isProcessing} />
                   </div>
                 )}
-                <div className="grid gap-6 md:grid-cols-2">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="aspect-square overflow-hidden rounded-md">
-                        <img src={image || "/placeholder.svg"} alt="Original" className="h-full w-full object-cover" />
-                      </div>
-                      <p className="mt-2 text-center font-medium">Original Image</p>
-                    </CardContent>
-                  </Card>
 
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="aspect-square overflow-hidden rounded-md bg-muted/30">
-                        {isProcessing ? (
-                          <SkeletonLoader />
-                        ) : sketch ? (
+                {/* Selection Mode Toggle */}
+                {image && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="selection-mode" checked={selectionMode} onCheckedChange={toggleSelectionMode} />
+                      <Label htmlFor="selection-mode" className="flex items-center">
+                        <Scissors className="mr-2 h-4 w-4" />
+                        Area Selection Mode
+                      </Label>
+                    </div>
+
+                    {selectionMode && (
+                      <p className="text-sm text-muted-foreground">
+                        Draw on the image to select areas for different styles
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectionMode ? (
+                  <AreaSelector
+                    imageUrl={image}
+                    selections={selections}
+                    onSelectionsChange={handleSelectionsChange}
+                    currentStyle={settings.style}
+                    currentSettings={getCurrentSettings()}
+                    isActive={selectionMode}
+                  />
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="aspect-square overflow-hidden rounded-md">
                           <img
-                            src={sketch || "/placeholder.svg"}
-                            alt="Sketch"
-                            className="h-full w-full object-cover animate-fade-in"
+                            src={image || "/placeholder.svg"}
+                            alt="Original"
+                            className="h-full w-full object-cover"
                           />
-                        ) : (
-                          <div className="flex h-full items-center justify-center">
-                            <p className="text-center text-muted-foreground">
-                              Click "Generate Sketch" to process your image
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <p className="mt-2 text-center font-medium">{isProcessing ? "Processing..." : "Sketch Output"}</p>
-                    </CardContent>
-                  </Card>
-                </div>
+                        </div>
+                        <p className="mt-2 text-center font-medium">Original Image</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="aspect-square overflow-hidden rounded-md bg-muted/30">
+                          {isProcessing ? (
+                            <SkeletonLoader />
+                          ) : sketch ? (
+                            <img
+                              src={sketch || "/placeholder.svg"}
+                              alt="Sketch"
+                              className="h-full w-full object-cover animate-fade-in"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center">
+                              <p className="text-center text-muted-foreground">
+                                Click "Generate Sketch" to process your image
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-2 text-center font-medium">
+                          {isProcessing ? "Processing..." : "Sketch Output"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-2">
-                  {!sketch && !isProcessing && <Button onClick={handleProcessImage}>Generate Sketch</Button>}
+                  {!sketch && !isProcessing && !selectionMode && (
+                    <Button onClick={handleProcessImage}>Generate Sketch</Button>
+                  )}
+                  {selectionMode && selections.length > 0 && (
+                    <Button onClick={handleProcessImage}>Generate with Selected Areas</Button>
+                  )}
 
-                  {sketch && (
+                  {sketch && !selectionMode && (
                     <>
                       <Button onClick={handleDownload}>
                         <Download className="mr-2 h-4 w-4" />
@@ -203,7 +317,7 @@ export default function ConvertPage() {
             )}
           </div>
 
-          {comparisonMode && image && sketch && (
+          {comparisonMode && image && sketch && !selectionMode && (
             <div className="mt-6 animate-fade-in">
               <ImageComparison originalImage={image} sketchImage={sketch} />
             </div>
@@ -232,10 +346,21 @@ export default function ConvertPage() {
                       onValueChange={(value) => handleSettingChange("style", value)}
                       className="w-full"
                     >
-                      <TabsList className="grid w-full grid-cols-3">
+                      <TabsList className="grid w-full grid-cols-2 mb-2">
                         <TabsTrigger value="pencil">Pencil</TabsTrigger>
                         <TabsTrigger value="charcoal">Charcoal</TabsTrigger>
+                      </TabsList>
+                      <TabsList className="grid w-full grid-cols-2 mb-2">
                         <TabsTrigger value="detailed">Detailed</TabsTrigger>
+                        <TabsTrigger value="crosshatch">Crosshatch</TabsTrigger>
+                      </TabsList>
+                      <TabsList className="grid w-full grid-cols-2 mb-2">
+                        <TabsTrigger value="etching">Etching</TabsTrigger>
+                        <TabsTrigger value="ink">Ink Wash</TabsTrigger>
+                      </TabsList>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="conte">Conte</TabsTrigger>
+                        <TabsTrigger value="woodcut">Woodcut</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -284,6 +409,174 @@ export default function ConvertPage() {
                       onValueChange={(value) => handleSettingChange("shading", value[0])}
                     />
                   </div>
+
+                  {/* Style-specific controls */}
+                  {settings.style === "pencil" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="pencilHardness">Pencil Hardness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.pencilHardness}/5</span>
+                      </div>
+                      <Slider
+                        id="pencilHardness"
+                        min={1}
+                        max={5}
+                        step={1}
+                        value={[settings.pencilHardness || 3]}
+                        onValueChange={(value) => handleSettingChange("pencilHardness", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Softer pencils (1-2) create darker, more textured lines. Harder pencils (4-5) create lighter,
+                        cleaner lines.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "charcoal" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="charcoalTexture">Texture Grain</Label>
+                        <span className="text-sm text-muted-foreground">{settings.charcoalTexture}%</span>
+                      </div>
+                      <Slider
+                        id="charcoalTexture"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.charcoalTexture || 50]}
+                        onValueChange={(value) => handleSettingChange("charcoalTexture", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the amount of texture grain in the charcoal effect. Higher values create a rougher,
+                        more textured look.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "detailed" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="detailedDensity">Line Density</Label>
+                        <span className="text-sm text-muted-foreground">{settings.detailedDensity}%</span>
+                      </div>
+                      <Slider
+                        id="detailedDensity"
+                        min={10}
+                        max={100}
+                        step={1}
+                        value={[settings.detailedDensity || 50]}
+                        onValueChange={(value) => handleSettingChange("detailedDensity", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the density of lines in detailed areas. Higher values create more intricate, detailed
+                        sketches.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "crosshatch" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="crosshatchAngle">Line Angle</Label>
+                        <span className="text-sm text-muted-foreground">{settings.crosshatchAngle}°</span>
+                      </div>
+                      <Slider
+                        id="crosshatchAngle"
+                        min={15}
+                        max={75}
+                        step={1}
+                        value={[settings.crosshatchAngle || 45]}
+                        onValueChange={(value) => handleSettingChange("crosshatchAngle", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the angle of crosshatching lines. Different angles create different visual textures.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "ink" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="inkTexture">Brush Texture</Label>
+                        <span className="text-sm text-muted-foreground">{settings.inkTexture}%</span>
+                      </div>
+                      <Slider
+                        id="inkTexture"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.inkTexture || 50]}
+                        onValueChange={(value) => handleSettingChange("inkTexture", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the texture of the ink brush strokes. Higher values create more textured, varied brush
+                        strokes.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "woodcut" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="woodcutBoldness">Edge Boldness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.woodcutBoldness}%</span>
+                      </div>
+                      <Slider
+                        id="woodcutBoldness"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.woodcutBoldness || 50]}
+                        onValueChange={(value) => handleSettingChange("woodcutBoldness", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the boldness of edges in the woodcut style. Higher values create more dramatic,
+                        high-contrast results.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "etching" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="etchingDepth">Line Depth</Label>
+                        <span className="text-sm text-muted-foreground">{settings.etchingDepth}%</span>
+                      </div>
+                      <Slider
+                        id="etchingDepth"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.etchingDepth || 50]}
+                        onValueChange={(value) => handleSettingChange("etchingDepth", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the depth and density of etching lines. Higher values create deeper, more pronounced
+                        line work.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "conte" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="conteSoftness">Softness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.conteSoftness}%</span>
+                      </div>
+                      <Slider
+                        id="conteSoftness"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.conteSoftness || 50]}
+                        onValueChange={(value) => handleSettingChange("conteSoftness", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the softness of the conte crayon effect. Higher values create softer, more blended
+                        strokes.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -302,6 +595,14 @@ async function simulateImageProcessing(
     lineStrength: number
     detail: number
     shading: number
+    pencilHardness?: number
+    charcoalTexture?: number
+    detailedDensity?: number
+    crosshatchAngle?: number
+    inkTexture?: number
+    woodcutBoldness?: number
+    etchingDepth?: number
+    conteSoftness?: number
   },
 ) {
   // In a real application, this would call a backend API
@@ -335,6 +636,170 @@ async function simulateImageProcessing(
   })
 }
 
+// New function to process image with multiple selections
+async function simulateImageProcessingWithSelections(
+  imageDataUrl: string,
+  selections: Selection[],
+  defaultSettings: any,
+) {
+  return new Promise<string>((resolve) => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+
+      if (!ctx) {
+        resolve(imageDataUrl)
+        return
+      }
+
+      canvas.width = img.width
+      canvas.height = img.height
+
+      // Draw original image
+      ctx.drawImage(img, 0, 0)
+
+      // First, apply default style to the entire image
+      applySketchEffect(ctx, canvas.width, canvas.height, defaultSettings)
+
+      // Create a temporary canvas for each selection
+      selections.forEach((selection) => {
+        const tempCanvas = document.createElement("canvas")
+        tempCanvas.width = canvas.width
+        tempCanvas.height = canvas.height
+        const tempCtx = tempCanvas.getContext("2d")
+
+        if (!tempCtx) return
+
+        // Draw original image to temp canvas
+        tempCtx.drawImage(img, 0, 0)
+
+        // Apply the selection's style
+        applySketchEffect(tempCtx, tempCanvas.width, tempCanvas.height, {
+          style: selection.style,
+          ...selection.settings,
+        })
+
+        // Apply blending based on selection's blend mode and radius
+        applyBlendedSelection(ctx, tempCanvas, selection)
+      })
+
+      resolve(canvas.toDataURL("image/png"))
+    }
+
+    img.src = imageDataUrl
+  })
+}
+
+// New function to apply blended selections
+function applyBlendedSelection(ctx: CanvasRenderingContext2D, sourceCanvas: HTMLCanvasElement, selection: Selection) {
+  const { x, y, width, height, blendMode, blendRadius } = selection
+
+  // For hard edge (no blending), just copy the region directly
+  if (blendMode === "hard" || blendRadius === 0) {
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x, y, width, height)
+    ctx.clip()
+    ctx.drawImage(sourceCanvas, 0, 0)
+    ctx.restore()
+    return
+  }
+
+  // For other blend modes, we need to create a mask
+  const maskCanvas = document.createElement("canvas")
+  maskCanvas.width = ctx.canvas.width
+  maskCanvas.height = ctx.canvas.height
+  const maskCtx = maskCanvas.getContext("2d")
+
+  if (!maskCtx) return
+
+  // Create the base mask shape
+  maskCtx.fillStyle = "black"
+  maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height)
+  maskCtx.fillStyle = "white"
+
+  switch (blendMode) {
+    case "soft":
+      // Create a soft-edged mask with gaussian-like falloff
+      const gradient = maskCtx.createRadialGradient(
+        x + width / 2,
+        y + height / 2,
+        Math.min(width, height) / 2 - blendRadius,
+        x + width / 2,
+        y + height / 2,
+        Math.min(width, height) / 2,
+      )
+      gradient.addColorStop(0, "white")
+      gradient.addColorStop(1, "black")
+      maskCtx.fillStyle = "white"
+      maskCtx.fillRect(x, y, width, height)
+      maskCtx.globalCompositeOperation = "source-atop"
+      maskCtx.fillStyle = gradient
+      maskCtx.fillRect(x - blendRadius, y - blendRadius, width + blendRadius * 2, height + blendRadius * 2)
+      maskCtx.globalCompositeOperation = "source-over"
+      break
+
+    case "gradient":
+      // Create a linear gradient from the edge inward
+      maskCtx.fillRect(
+        x + blendRadius,
+        y + blendRadius,
+        Math.max(0, width - blendRadius * 2),
+        Math.max(0, height - blendRadius * 2),
+      )
+
+      // Top gradient
+      const topGradient = maskCtx.createLinearGradient(0, y, 0, y + blendRadius)
+      topGradient.addColorStop(0, "black")
+      topGradient.addColorStop(1, "white")
+      maskCtx.fillStyle = topGradient
+      maskCtx.fillRect(x, y, width, blendRadius)
+
+      // Bottom gradient
+      const bottomGradient = maskCtx.createLinearGradient(0, y + height - blendRadius, 0, y + height)
+      bottomGradient.addColorStop(0, "white")
+      bottomGradient.addColorStop(1, "black")
+      maskCtx.fillStyle = bottomGradient
+      maskCtx.fillRect(x, y + height - blendRadius, width, blendRadius)
+
+      // Left gradient
+      const leftGradient = maskCtx.createLinearGradient(x, 0, x + blendRadius, 0)
+      leftGradient.addColorStop(0, "black")
+      leftGradient.addColorStop(1, "white")
+      maskCtx.fillStyle = leftGradient
+      maskCtx.fillRect(x, y + blendRadius, blendRadius, height - blendRadius * 2)
+
+      // Right gradient
+      const rightGradient = maskCtx.createLinearGradient(x + width - blendRadius, 0, x + width, 0)
+      rightGradient.addColorStop(0, "white")
+      rightGradient.addColorStop(1, "black")
+      maskCtx.fillStyle = rightGradient
+      maskCtx.fillRect(x + width - blendRadius, y + blendRadius, blendRadius, height - blendRadius * 2)
+      break
+
+    case "feather":
+      // Create a feathered edge with blur
+      maskCtx.filter = `blur(${blendRadius}px)`
+      maskCtx.fillRect(
+        x + blendRadius,
+        y + blendRadius,
+        Math.max(0, width - blendRadius * 2),
+        Math.max(0, height - blendRadius * 2),
+      )
+      maskCtx.filter = "none"
+      break
+  }
+
+  // Apply the masked image to the main canvas
+  ctx.save()
+  ctx.drawImage(sourceCanvas, 0, 0, ctx.canvas.width, ctx.canvas.height, 0, 0, ctx.canvas.width, ctx.canvas.height)
+  ctx.globalCompositeOperation = "destination-in"
+  ctx.drawImage(maskCanvas, 0, 0)
+  ctx.restore()
+}
+
 function applySketchEffect(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -344,6 +809,14 @@ function applySketchEffect(
     lineStrength: number
     detail: number
     shading: number
+    pencilHardness?: number
+    charcoalTexture?: number
+    detailedDensity?: number
+    crosshatchAngle?: number
+    inkTexture?: number
+    woodcutBoldness?: number
+    etchingDepth?: number
+    conteSoftness?: number
   },
 ) {
   // Get image data
@@ -373,6 +846,21 @@ function applySketchEffect(
       break
     case "detailed":
       applyDetailedEffect(ctx, edges, width, height, settings)
+      break
+    case "crosshatch":
+      applyCrosshatchEffect(ctx, edges, width, height, settings)
+      break
+    case "ink":
+      applyInkWashEffect(ctx, edges, width, height, settings)
+      break
+    case "woodcut":
+      applyWoodcutEffect(ctx, edges, width, height, settings)
+      break
+    case "etching":
+      applyEtchingEffect(ctx, edges, width, height, settings)
+      break
+    case "conte":
+      applyConteEffect(ctx, edges, width, height, settings)
       break
   }
 }
@@ -420,10 +908,16 @@ function applyPencilEffect(
   settings: {
     lineStrength: number
     shading: number
+    pencilHardness?: number
   },
 ) {
   const lineStrength = settings.lineStrength / 100
   const shading = settings.shading / 100
+  const hardness = settings.pencilHardness || 3
+
+  // Adjust stroke characteristics based on hardness
+  const strokeOpacity = 1 - (hardness - 1) * 0.15 // Softer pencils are darker
+  const strokeVariation = (6 - hardness) * 0.5 // Softer pencils have more variation
 
   // Draw edges with pencil-like strokes
   for (let y = 0; y < height; y++) {
@@ -431,29 +925,32 @@ function applyPencilEffect(
       const edge = edges[y * width + x]
       if (edge > 30) {
         const intensity = edge * lineStrength
-        ctx.fillStyle = `rgba(0, 0, 0, ${intensity / 255})`
+        ctx.fillStyle = `rgba(0, 0, 0, ${(intensity / 255) * strokeOpacity})`
 
-        // Simulate pencil strokes
+        // Simulate pencil strokes with hardness-based variation
         if (Math.random() < 0.3) {
-          const length = Math.random() * 3 + 1
+          const length = Math.random() * (3 + strokeVariation) + 1
           const angle = Math.random() * Math.PI
           ctx.beginPath()
           ctx.moveTo(x, y)
           ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length)
+          ctx.lineWidth = hardness <= 2 ? 1.5 : 1 // Softer pencils have thicker lines
           ctx.stroke()
         }
       }
     }
   }
 
-  // Add shading
+  // Add shading with hardness-based texture
   if (shading > 0) {
     ctx.globalAlpha = shading * 0.3
-    for (let i = 0; i < 1000; i++) {
+    const grainAmount = (6 - hardness) * 300 // More grain for softer pencils
+
+    for (let i = 0; i < grainAmount; i++) {
       const x = Math.random() * width
       const y = Math.random() * height
-      const size = Math.random() * 2
-      ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.1})`
+      const size = Math.random() * (hardness <= 2 ? 3 : 2)
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.1 * strokeOpacity})`
       ctx.fillRect(x, y, size, size)
     }
     ctx.globalAlpha = 1
@@ -468,10 +965,12 @@ function applyCharcoalEffect(
   settings: {
     lineStrength: number
     shading: number
+    charcoalTexture?: number
   },
 ) {
   const lineStrength = settings.lineStrength / 100
   const shading = settings.shading / 100
+  const textureGrain = (settings.charcoalTexture || 50) / 100
 
   // Draw darker background
   ctx.fillStyle = "#f8f8f8"
@@ -485,7 +984,7 @@ function applyCharcoalEffect(
         const intensity = edge * lineStrength * 1.5
         ctx.fillStyle = `rgba(0, 0, 0, ${intensity / 255})`
 
-        // Simulate charcoal strokes
+        // Simulate charcoal strokes with texture-based variation
         if (Math.random() < 0.4) {
           const length = Math.random() * 5 + 2
           const angle = Math.random() * Math.PI
@@ -499,13 +998,15 @@ function applyCharcoalEffect(
     }
   }
 
-  // Add texture
+  // Add texture based on grain setting
   ctx.globalAlpha = shading * 0.5
-  for (let i = 0; i < 2000; i++) {
+  const grainDensity = Math.floor(textureGrain * 3000)
+
+  for (let i = 0; i < grainDensity; i++) {
     const x = Math.random() * width
     const y = Math.random() * height
-    const size = Math.random() * 3
-    ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2})`
+    const size = Math.random() * (textureGrain * 4 + 1)
+    ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2 * textureGrain})`
     ctx.fillRect(x, y, size, size)
   }
   ctx.globalAlpha = 1
@@ -519,24 +1020,35 @@ function applyDetailedEffect(
   settings: {
     lineStrength: number
     shading: number
+    detailedDensity?: number
   },
 ) {
   const lineStrength = settings.lineStrength / 100
   const shading = settings.shading / 100
+  const density = (settings.detailedDensity || 50) / 100
+
+  // Adjust line spacing based on density
+  const lineSpacing = Math.max(1, Math.floor(5 - density * 4))
 
   // Draw with detailed strokes
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
+  for (let y = 0; y < height; y += lineSpacing) {
+    for (let x = 0; x < width; x += lineSpacing) {
       const edge = edges[y * width + x]
       if (edge > 25) {
         const intensity = edge * lineStrength
 
-        // Create cross-hatching effect
+        // Create cross-hatching effect with density-based variation
         if (intensity > 150) {
           drawHatchLine(ctx, x, y, 45, 3, intensity / 255)
           drawHatchLine(ctx, x, y, -45, 3, intensity / 255)
+          if (density > 0.7) {
+            drawHatchLine(ctx, x, y, 0, 2, (intensity / 255) * 0.7)
+          }
         } else if (intensity > 100) {
           drawHatchLine(ctx, x, y, 45, 3, intensity / 255)
+          if (density > 0.8) {
+            drawHatchLine(ctx, x, y, -45, 2, (intensity / 255) * 0.6)
+          }
         } else if (intensity > 50) {
           drawHatchLine(ctx, x, y, 0, 2, intensity / 255)
         }
@@ -544,10 +1056,12 @@ function applyDetailedEffect(
     }
   }
 
-  // Add fine details
+  // Add fine details based on density
   if (shading > 0) {
     ctx.globalAlpha = shading * 0.2
-    for (let i = 0; i < 3000; i++) {
+    const detailAmount = Math.floor(density * 4000)
+
+    for (let i = 0; i < detailAmount; i++) {
       const x = Math.random() * width
       const y = Math.random() * height
       drawHatchLine(ctx, x, y, Math.random() * 180, 1, Math.random() * 0.1)
@@ -571,4 +1085,512 @@ function drawHatchLine(
   ctx.strokeStyle = `rgba(0, 0, 0, ${intensity})`
   ctx.lineWidth = 0.5
   ctx.stroke()
+}
+
+function applyCrosshatchEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shading: number
+    crosshatchAngle?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const shading = settings.shading / 100
+  const angleVariation = settings.crosshatchAngle || 45
+
+  // Clear canvas with white background
+  ctx.fillStyle = "white"
+  ctx.fillRect(0, 0, width, height)
+
+  // Apply crosshatching with multiple layers and angle variation
+  for (let y = 0; y < height; y += 4) {
+    for (let x = 0; x < width; x += 4) {
+      const idx = y * width + x
+      const edge = edges[idx]
+      const intensity = edge * lineStrength
+
+      if (intensity > 200) {
+        // Dense crosshatching for dark areas
+        drawHatchLine(ctx, x, y, angleVariation, 6, 0.7)
+        drawHatchLine(ctx, x, y, -angleVariation, 6, 0.7)
+        if (angleVariation < 60) {
+          drawHatchLine(ctx, x, y, 0, 6, 0.5)
+          drawHatchLine(ctx, x, y, 90, 6, 0.5)
+        }
+      } else if (intensity > 150) {
+        // Medium crosshatching
+        drawHatchLine(ctx, x, y, angleVariation, 6, 0.6)
+        drawHatchLine(ctx, x, y, -angleVariation, 6, 0.6)
+      } else if (intensity > 100) {
+        // Light crosshatching
+        drawHatchLine(ctx, x, y, angleVariation, 5, 0.5)
+      } else if (intensity > 50) {
+        // Very light hatching
+        drawHatchLine(ctx, x, y, angleVariation, 4, 0.3)
+      }
+    }
+  }
+
+  // Add texture based on shading setting
+  if (shading > 0) {
+    ctx.globalAlpha = shading * 0.2
+    for (let i = 0; i < 2000; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+      const angle = Math.random() > 0.5 ? angleVariation : -angleVariation
+      drawHatchLine(ctx, x, y, angle, 3, Math.random() * 0.2)
+    }
+    ctx.globalAlpha = 1
+  }
+}
+
+function applyInkWashEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shading: number
+    inkTexture?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const shading = settings.shading / 100
+  const brushTexture = (settings.inkTexture || 50) / 100
+
+  // Clear canvas with slightly off-white background to mimic paper
+  ctx.fillStyle = "#fafaf8"
+  ctx.fillRect(0, 0, width, height)
+
+  // Create a temporary canvas for the wash effect
+  const tempCanvas = document.createElement("canvas")
+  tempCanvas.width = width
+  tempCanvas.height = height
+  const tempCtx = tempCanvas.getContext("2d")
+
+  if (!tempCtx) return
+
+  // Draw base ink wash with texture-based variation
+  const strokeSpacing = Math.max(1, Math.floor(4 - brushTexture * 2))
+
+  for (let y = 0; y < height; y += strokeSpacing) {
+    for (let x = 0; x < width; x += strokeSpacing) {
+      const idx = y * width + x
+      const edge = edges[idx]
+
+      if (edge > 5) {
+        const intensity = edge * lineStrength
+        const opacity = Math.min(0.9, intensity / 255)
+
+        // Draw ink wash strokes with texture-based variation
+        tempCtx.beginPath()
+        const strokeLength = Math.random() * (10 + brushTexture * 5) + 5
+        const angle = Math.random() * Math.PI
+
+        tempCtx.moveTo(x, y)
+        tempCtx.lineTo(x + Math.cos(angle) * strokeLength, y + Math.sin(angle) * strokeLength)
+
+        tempCtx.lineWidth = Math.random() * (brushTexture * 4 + 1) + 1
+        tempCtx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.4})`
+        tempCtx.stroke()
+      }
+    }
+  }
+
+  // Apply blur to simulate ink diffusion (more blur for higher texture)
+  tempCtx.filter = `blur(${brushTexture * 1.5 + 0.5}px)`
+  tempCtx.drawImage(tempCanvas, 0, 0)
+
+  // Draw on main canvas
+  ctx.drawImage(tempCanvas, 0, 0)
+
+  // Add darker ink lines for definition
+  for (let y = 0; y < height; y += 4) {
+    for (let x = 0; x < width; x += 4) {
+      const idx = y * width + x
+      const edge = edges[idx]
+
+      if (edge > 100) {
+        const intensity = edge * lineStrength
+
+        ctx.beginPath()
+        const strokeLength = Math.random() * 5 + 2
+        const angle = Math.random() * Math.PI
+
+        ctx.moveTo(x, y)
+        ctx.lineTo(x + Math.cos(angle) * strokeLength, y + Math.sin(angle) * strokeLength)
+
+        ctx.lineWidth = Math.random() * 1.5 + 0.5
+        ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.9, intensity / 255)})`
+        ctx.stroke()
+      }
+    }
+  }
+
+  // Add texture based on shading and brush texture
+  if (shading > 0) {
+    ctx.globalAlpha = shading * 0.15
+    const spatterAmount = Math.floor(brushTexture * 1500)
+
+    for (let i = 0; i < spatterAmount; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+
+      ctx.beginPath()
+      ctx.arc(x, y, Math.random() * (brushTexture * 4 + 1), 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2})`
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
+}
+
+function applyWoodcutEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shading: number
+    woodcutBoldness?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const shading = settings.shading / 100
+  const boldness = (settings.woodcutBoldness || 50) / 100
+
+  // Clear canvas with white background
+  ctx.fillStyle = "white"
+  ctx.fillRect(0, 0, width, height)
+
+  // Create high contrast woodcut effect with boldness-based threshold
+  const threshold = 100 - boldness * 60 // Lower threshold = more black areas
+
+  // First pass - create bold areas
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const edge = edges[idx]
+      const intensity = edge * lineStrength
+
+      if (intensity > threshold) {
+        ctx.fillStyle = "black"
+        ctx.fillRect(x, y, 1, 1)
+      }
+    }
+  }
+
+  // Second pass - add texture with boldness-based variation
+  const textureFrequency = Math.max(1, Math.floor(5 - boldness * 3))
+
+  for (let y = 0; y < height; y += textureFrequency) {
+    for (let x = 0; x < width; x += textureFrequency) {
+      // Add woodcut-like texture lines
+      if (Math.random() < 0.3) {
+        const lineLength = Math.random() * (boldness * 8 + 3) + 3
+        const angle = Math.random() > 0.7 ? 0 : 90 // Mostly horizontal or vertical
+
+        ctx.beginPath()
+        ctx.moveTo(x, y)
+        ctx.lineTo(
+          x + Math.cos((angle * Math.PI) / 180) * lineLength,
+          y + Math.sin((angle * Math.PI) / 180) * lineLength,
+        )
+
+        // Vary line opacity based on position
+        const pixelData = ctx.getImageData(x, y, 1, 1).data
+        const isDark = pixelData[0] < 128 // Check if pixel is already dark
+
+        ctx.strokeStyle = isDark
+          ? `rgba(255, 255, 255, ${Math.random() * 0.3})`
+          : `rgba(0, 0, 0, ${Math.random() * 0.4})`
+
+        ctx.lineWidth = Math.random() * (boldness * 2 + 0.5) + 0.5
+        ctx.stroke()
+      }
+    }
+  }
+
+  // Add bold outlines for definition based on boldness
+  const outlineThickness = Math.max(1, Math.floor(boldness * 3))
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = y * width + x
+      const edge = edges[idx]
+
+      if (edge > 200) {
+        ctx.fillStyle = "black"
+        ctx.fillRect(x - outlineThickness, y - outlineThickness, outlineThickness * 2 + 1, outlineThickness * 2 + 1)
+      }
+    }
+  }
+}
+
+function applyEtchingEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shading: number
+    etchingDepth?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const shading = settings.shading / 100
+  const lineDepth = (settings.etchingDepth || 50) / 100
+
+  // Clear canvas with off-white background
+  ctx.fillStyle = "#f9f9f7"
+  ctx.fillRect(0, 0, width, height)
+
+  // Create fine etching lines
+  const lineSpacing = Math.max(1, Math.floor(3 - lineDepth * 2))
+
+  // First pass - horizontal etching lines
+  for (let y = 0; y < height; y += lineSpacing) {
+    let inDarkArea = false
+    let lineLength = 0
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const edge = edges[idx]
+      const intensity = edge * lineStrength
+
+      // Determine if we're in a dark area
+      const isDark = intensity > 70
+
+      // Start or continue a line in dark areas
+      if (isDark) {
+        if (!inDarkArea) {
+          // Start a new line
+          inDarkArea = true
+          lineLength = 0
+          ctx.beginPath()
+          ctx.moveTo(x, y + Math.random() * lineSpacing * 0.8)
+        }
+
+        lineLength++
+      } else if (inDarkArea) {
+        // End the line
+        inDarkArea = false
+        if (lineLength > 2) {
+          ctx.lineTo(x, y + Math.random() * lineSpacing * 0.8)
+          ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.9, lineDepth + 0.3)})`
+          ctx.lineWidth = 0.5
+          ctx.stroke()
+        }
+      }
+    }
+  }
+
+  // Second pass - vertical etching lines for darker areas
+  for (let x = 0; x < width; x += lineSpacing * 2) {
+    let inDarkArea = false
+    let lineLength = 0
+
+    for (let y = 0; y < height; y++) {
+      const idx = y * width + x
+      const edge = edges[idx]
+      const intensity = edge * lineStrength
+
+      // Determine if we're in a dark area
+      const isDark = intensity > 120
+
+      // Start or continue a line in dark areas
+      if (isDark) {
+        if (!inDarkArea) {
+          // Start a new line
+          inDarkArea = true
+          lineLength = 0
+          ctx.beginPath()
+          ctx.moveTo(x + Math.random() * lineSpacing * 0.8, y)
+        }
+
+        lineLength++
+      } else if (inDarkArea) {
+        // End the line
+        inDarkArea = false
+        if (lineLength > 2) {
+          ctx.lineTo(x + Math.random() * lineSpacing * 0.8, y)
+          ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.9, lineDepth + 0.2)})`
+          ctx.lineWidth = 0.5
+          ctx.stroke()
+        }
+      }
+    }
+  }
+
+  // Third pass - diagonal lines for the darkest areas
+  if (lineDepth > 0.4) {
+    for (let i = 0; i < width + height; i += lineSpacing * 3) {
+      for (let j = 0; j < Math.min(width, height); j += lineSpacing * 2) {
+        const x = Math.min(width - 1, i - j)
+        const y = Math.min(height - 1, j)
+
+        const idx = y * width + x
+        if (idx >= 0 && idx < edges.length) {
+          const edge = edges[idx]
+          const intensity = edge * lineStrength
+
+          if (intensity > 180) {
+            const lineLength = Math.random() * (lineDepth * 10) + 5
+            ctx.beginPath()
+            ctx.moveTo(x, y)
+            ctx.lineTo(Math.min(width - 1, x + lineLength * 0.7), Math.min(height - 1, y + lineLength * 0.7))
+            ctx.strokeStyle = `rgba(0, 0, 0, ${Math.min(0.9, lineDepth * 0.8)})`
+            ctx.lineWidth = 0.5
+            ctx.stroke()
+          }
+        }
+      }
+    }
+  }
+
+  // Add texture based on shading
+  if (shading > 0) {
+    ctx.globalAlpha = shading * 0.1
+    const textureAmount = Math.floor(lineDepth * 2000)
+
+    for (let i = 0; i < textureAmount; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+      const size = Math.random() * 0.5 + 0.2
+
+      ctx.beginPath()
+      ctx.arc(x, y, size, 0, Math.PI * 2)
+      ctx.fillStyle = "black"
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
+}
+
+function applyConteEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shading: number
+    conteSoftness?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const shading = settings.shading / 100
+  const softness = (settings.conteSoftness || 50) / 100
+
+  // Clear canvas with slightly textured background
+  ctx.fillStyle = "#f8f7f5"
+  ctx.fillRect(0, 0, width, height)
+
+  // Add paper texture
+  for (let i = 0; i < 5000; i++) {
+    const x = Math.random() * width
+    const y = Math.random() * height
+    ctx.fillStyle = `rgba(220, 220, 215, ${Math.random() * 0.05})`
+    ctx.fillRect(x, y, Math.random() * 2 + 1, Math.random() * 2 + 1)
+  }
+
+  // Create a temporary canvas for the conte effect
+  const tempCanvas = document.createElement("canvas")
+  tempCanvas.width = width
+  tempCanvas.height = height
+  const tempCtx = tempCanvas.getContext("2d")
+
+  if (!tempCtx) return
+
+  // Draw base conte strokes with softness-based variation
+  const strokeSpacing = Math.max(1, Math.floor(4 - softness * 2))
+
+  for (let y = 0; y < height; y += strokeSpacing) {
+    for (let x = 0; x < width; x += strokeSpacing) {
+      const idx = y * width + x
+      const edge = edges[idx]
+
+      if (edge > 20) {
+        const intensity = edge * lineStrength
+        const opacity = Math.min(0.9, intensity / 255)
+
+        // Draw conte crayon-like strokes
+        tempCtx.beginPath()
+
+        // Vary stroke direction based on position
+        const angle = ((x % 20) / 20) * Math.PI
+        const strokeLength = Math.random() * (softness * 8 + 4) + 3
+
+        tempCtx.moveTo(x, y)
+        tempCtx.lineTo(x + Math.cos(angle) * strokeLength, y + Math.sin(angle) * strokeLength)
+
+        tempCtx.lineWidth = Math.random() * (softness * 3 + 1) + 1
+        tempCtx.strokeStyle = `rgba(0, 0, 0, ${opacity * 0.6})`
+        tempCtx.stroke()
+      }
+    }
+  }
+
+  // Apply blur based on softness to simulate conte texture
+  tempCtx.filter = `blur(${softness * 1.2}px)`
+  tempCtx.drawImage(tempCanvas, 0, 0)
+
+  // Draw on main canvas
+  ctx.drawImage(tempCanvas, 0, 0)
+
+  // Add smudging effect based on softness
+  if (softness > 0.3) {
+    const smudgeCount = Math.floor(softness * 200)
+
+    for (let i = 0; i < smudgeCount; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+      const smudgeLength = Math.random() * (softness * 20) + 5
+      const angle = Math.random() * Math.PI
+
+      ctx.globalAlpha = Math.random() * 0.3
+      ctx.filter = `blur(${softness * 2}px)`
+
+      // Get the color at this point
+      const pixelData = ctx.getImageData(x, y, 1, 1).data
+      const brightness = (pixelData[0] + pixelData[1] + pixelData[2]) / 3
+
+      // Only smudge if there's something to smudge
+      if (brightness < 240) {
+        ctx.beginPath()
+        ctx.moveTo(x, y)
+        ctx.lineTo(x + Math.cos(angle) * smudgeLength, y + Math.sin(angle) * smudgeLength)
+        ctx.lineWidth = Math.random() * (softness * 5) + 2
+        ctx.strokeStyle = `rgba(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]}, 0.3)`
+        ctx.stroke()
+      }
+    }
+
+    ctx.filter = "none"
+    ctx.globalAlpha = 1
+  }
+
+  // Add texture based on shading
+  if (shading > 0) {
+    ctx.globalAlpha = shading * 0.15
+    const textureAmount = Math.floor((1 - softness) * 2000) // Less texture for softer conte
+
+    for (let i = 0; i < textureAmount; i++) {
+      const x = Math.random() * width
+      const y = Math.random() * height
+
+      ctx.beginPath()
+      ctx.arc(x, y, Math.random() * 1.5 + 0.5, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.2})`
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
 }
