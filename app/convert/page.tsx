@@ -14,9 +14,13 @@ import { ShareButtons } from "@/components/share-buttons"
 import { useToast } from "@/hooks/use-toast"
 import { ProgressIndicator } from "@/components/progress-indicator"
 import { ImageComparison } from "@/components/image-comparison"
-import { AreaSelector, type Selection } from "@/components/area-selector"
+import { AreaSelector, type Selection, type NonSelectedAreaMode } from "@/components/area-selector"
 
 export default function ConvertPage() {
+  const [fullscreenImg, setFullscreenImg] = useState<null | 'original' | 'sketch'>(null);
+  // Popup for wait suggestion (show only once per session)
+  const [showWaitPopup, setShowWaitPopup] = useState(false);
+  const [hasSeenWaitPopup, setHasSeenWaitPopup] = useState(false);
   const [image, setImage] = useState<string | null>(null)
   const [sketch, setSketch] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -40,7 +44,7 @@ export default function ConvertPage() {
   const [comparisonMode, setComparisonMode] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
   const [selections, setSelections] = useState<Selection[]>([])
-
+  const [nonSelectedAreaMode, setNonSelectedAreaMode] = useState<NonSelectedAreaMode>('original');
   const handleImageUpload = (imageDataUrl: string) => {
     setImage(imageDataUrl)
     setSketch(null)
@@ -59,7 +63,7 @@ export default function ConvertPage() {
     let processedSketch
 
     if (selections.length > 0) {
-      processedSketch = await simulateImageProcessingWithSelections(image, selections, settings)
+      processedSketch = await simulateImageProcessingWithSelections(image, selections, settings, nonSelectedAreaMode)
     } else {
       processedSketch = await simulateImageProcessing(image, settings)
     }
@@ -195,6 +199,62 @@ export default function ConvertPage() {
   return (
     <div className="container py-8 md:py-12">
       <div className="mx-auto max-w-5xl space-y-8">
+
+        {/* Fullscreen Modal for Original/Sketch */}
+        {fullscreenImg && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.95)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={() => setFullscreenImg(null)}
+          >
+            <img
+              src={fullscreenImg === 'original' ? image! : sketch!}
+              alt={fullscreenImg === 'original' ? 'Original Fullscreen' : 'Sketch Fullscreen'}
+              style={{
+                maxWidth: "90vw",
+                maxHeight: "90vh",
+                borderRadius: 12,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+            {/* Close button */}
+            <button
+              onClick={e => { e.stopPropagation(); setFullscreenImg(null); }}
+              style={{
+                position: "fixed",
+                top: 24,
+                right: 32,
+                background: "rgba(0,0,0,0.7)",
+                border: "none",
+                borderRadius: "50%",
+                width: 40,
+                height: 40,
+                color: "#fff",
+                fontSize: 28,
+                cursor: "pointer",
+                zIndex: 1001,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Close fullscreen"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Image to Sketch Converter</h1>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
@@ -234,51 +294,158 @@ export default function ConvertPage() {
                 )}
 
                 {selectionMode ? (
-                  <AreaSelector
-                    imageUrl={image}
-                    selections={selections}
-                    onSelectionsChange={handleSelectionsChange}
-                    currentStyle={settings.style}
-                    currentSettings={getCurrentSettings()}
-                    isActive={selectionMode}
-                  />
+                  <>
+                    <AreaSelector
+                      imageUrl={image}
+                      selections={selections}
+                      onSelectionsChange={handleSelectionsChange}
+                      currentStyle={settings.style}
+                      currentSettings={getCurrentSettings()}
+                      isActive={selectionMode}
+                      nonSelectedAreaMode={nonSelectedAreaMode}
+                      onNonSelectedAreaModeChange={setNonSelectedAreaMode}
+                    />
+                    {/* Show sketch output card below the area selector if present */}
+                    <div className="grid gap-6 md:grid-cols-2 mt-6">
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="aspect-square overflow-hidden rounded-md relative">
+                            <img
+                              src={image || "/placeholder.svg"}
+                              alt="Original"
+                              className="h-full w-full object-cover"
+                              onClick={() => setFullscreenImg('original')}
+                              style={{ cursor: 'zoom-in' }}
+                            />
+                            <button
+                              title="Fullscreen Original"
+                              className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
+                              onClick={() => setFullscreenImg('original')}
+                              style={{ lineHeight: 0 }}
+                            >
+                              <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                          <p className="mt-2 text-center font-medium">Original Image</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="aspect-square overflow-hidden rounded-md bg-muted/30 relative">
+                            {isProcessing ? (
+                              <SkeletonLoader />
+                            ) : sketch ? (
+                              <>
+                                <img
+                                  src={sketch || "/placeholder.svg"}
+                                  alt="Sketch"
+                                  className="h-full w-full object-cover animate-fade-in"
+                                  onClick={() => setFullscreenImg('sketch')}
+                                  style={{ cursor: 'zoom-in' }}
+                                />
+                                <button
+                                  title="Fullscreen Sketch"
+                                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
+                                  onClick={() => setFullscreenImg('sketch')}
+                                  style={{ lineHeight: 0 }}
+                                >
+                                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                              </>
+                            ) : (
+                              <div className="flex h-full items-center justify-center">
+                                <p className="text-center text-muted-foreground">
+                                  Click "Generate Sketch" to process your image
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <p className="mt-2 text-center font-medium">
+                            {isProcessing ? "Processing..." : "Sketch Output"}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2">
                     <Card>
                       <CardContent className="p-4">
-                        <div className="aspect-square overflow-hidden rounded-md">
-                          <img
-                            src={image || "/placeholder.svg"}
-                            alt="Original"
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <p className="mt-2 text-center font-medium">Original Image</p>
+                        <div className="aspect-square overflow-hidden rounded-md relative">
+  <img
+    src={image || "/placeholder.svg"}
+    alt="Original"
+    className="h-full w-full object-cover"
+    onClick={() => setFullscreenImg('original')}
+    style={{ cursor: 'zoom-in' }}
+  />
+  <button
+    title="Fullscreen Original"
+    className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
+    onClick={() => setFullscreenImg('original')}
+    style={{ lineHeight: 0 }}
+  >
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  </button>
+</div>
+<p className="mt-2 text-center font-medium">Original Image</p>
                       </CardContent>
                     </Card>
 
                     <Card>
                       <CardContent className="p-4">
-                        <div className="aspect-square overflow-hidden rounded-md bg-muted/30">
-                          {isProcessing ? (
-                            <SkeletonLoader />
-                          ) : sketch ? (
-                            <img
-                              src={sketch || "/placeholder.svg"}
-                              alt="Sketch"
-                              className="h-full w-full object-cover animate-fade-in"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <p className="text-center text-muted-foreground">
-                                Click "Generate Sketch" to process your image
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        <p className="mt-2 text-center font-medium">
-                          {isProcessing ? "Processing..." : "Sketch Output"}
-                        </p>
+                        <div className="aspect-square overflow-hidden rounded-md bg-muted/30 relative">
+  {isProcessing ? (
+    <SkeletonLoader />
+  ) : sketch ? (
+    <>
+      <img
+        src={sketch || "/placeholder.svg"}
+        alt="Sketch"
+        className="h-full w-full object-cover animate-fade-in"
+        onClick={() => setFullscreenImg('sketch')}
+        style={{ cursor: 'zoom-in' }}
+      />
+      <button
+        title="Fullscreen Sketch"
+        className="absolute top-2 right-2 bg-black/60 rounded-full p-1 text-white hover:bg-black/80 z-10"
+        onClick={() => setFullscreenImg('sketch')}
+        style={{ lineHeight: 0 }}
+      >
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+    </>
+  ) : (
+    <div className="flex h-full items-center justify-center">
+      <p className="text-center text-muted-foreground">
+        Click "Generate Sketch" to process your image
+      </p>
+    </div>
+  )}
+</div>
+<p className="mt-2 text-center font-medium">
+  {isProcessing ? "Processing..." : "Sketch Output"}
+</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -286,7 +453,61 @@ export default function ConvertPage() {
 
                 <div className="flex flex-wrap gap-2">
                   {!sketch && !isProcessing && !selectionMode && (
-                    <Button onClick={handleProcessImage}>Generate Sketch</Button>
+                    <>
+                      <Button onClick={() => {
+                        if (!hasSeenWaitPopup) setShowWaitPopup(true);
+                        handleProcessImage();
+                      }}>
+                        Generate Sketch
+                      </Button>
+                      {/* Wait suggestion popup */}
+                      {showWaitPopup && (
+                        <div style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          width: '100vw',
+                          height: '100vh',
+                          background: 'rgba(0,0,0,0.45)',
+                          zIndex: 2000,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                          onClick={() => { setShowWaitPopup(false); setHasSeenWaitPopup(true); }}
+                        >
+                          <div style={{
+                            background: '#fff',
+                            borderRadius: 12,
+                            padding: 32,
+                            maxWidth: 350,
+                            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                            textAlign: 'center',
+                            position: 'relative',
+                          }} onClick={e => e.stopPropagation()}>
+                            <h3 style={{ fontWeight: 600, marginBottom: 12 }}>Tip for Better Results</h3>
+                            <p style={{ fontSize: 16, color: '#333', marginBottom: 16 }}>
+                              The AI model may take 15–20 seconds to generate the best sketch. If you wait a bit longer, the result will be higher quality!
+                            </p>
+                            <button
+                              style={{
+                                background: '#181818',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '8px 20px',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                marginTop: 8,
+                              }}
+                              onClick={() => { setShowWaitPopup(false); setHasSeenWaitPopup(true); }}
+                            >
+                              Got it
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   {selectionMode && selections.length > 0 && (
                     <Button onClick={handleProcessImage}>Generate with Selected Areas</Button>
@@ -298,10 +519,7 @@ export default function ConvertPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Download Sketch
                       </Button>
-                      <Button variant="outline" onClick={handleShare}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share
-                      </Button>
+                      
                       <Button variant="outline" onClick={toggleComparisonMode}>
                         {comparisonMode ? "Exit Comparison" : "Compare Images"}
                       </Button>
@@ -641,6 +859,7 @@ async function simulateImageProcessingWithSelections(
   imageDataUrl: string,
   selections: Selection[],
   defaultSettings: any,
+  nonSelectedAreaMode: NonSelectedAreaMode
 ) {
   return new Promise<string>((resolve) => {
     const img = new Image()
@@ -657,13 +876,20 @@ async function simulateImageProcessingWithSelections(
       canvas.width = img.width
       canvas.height = img.height
 
-      // Draw original image
-      ctx.drawImage(img, 0, 0)
+      if (nonSelectedAreaMode === 'original') {
+        // Draw original image first
+        ctx.drawImage(img, 0, 0);
+      } else {
+        // Transparent background (ensure alpha is 0 everywhere)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Also ensure canvas is fully transparent
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
 
-      // First, apply default style to the entire image
-      applySketchEffect(ctx, canvas.width, canvas.height, defaultSettings)
-
-      // Create a temporary canvas for each selection
+      // For each selection, process only the selected area
       selections.forEach((selection) => {
         const tempCanvas = document.createElement("canvas")
         tempCanvas.width = canvas.width
@@ -672,17 +898,20 @@ async function simulateImageProcessingWithSelections(
 
         if (!tempCtx) return
 
-        // Draw original image to temp canvas
-        tempCtx.drawImage(img, 0, 0)
-
-        // Apply the selection's style
+        // Draw only the selected region from the image and apply sketch effect
+        tempCtx.save();
+        tempCtx.beginPath();
+        tempCtx.rect(selection.x, selection.y, selection.width, selection.height);
+        tempCtx.clip();
+        tempCtx.drawImage(img, 0, 0);
         applySketchEffect(tempCtx, tempCanvas.width, tempCanvas.height, {
-  style: selection.style,
-  lineStrength: selection.settings?.lineStrength ?? 5,
-  detail: selection.settings?.detail ?? 5,
-  shading: selection.settings?.shading ?? 5,
-  ...selection.settings,
-})
+          style: selection.style,
+          lineStrength: selection.settings?.lineStrength ?? 5,
+          detail: selection.settings?.detail ?? 5,
+          shading: selection.settings?.shading ?? 5,
+          ...selection.settings,
+        });
+        tempCtx.restore();
 
         // Apply blending based on selection's blend mode and radius
         applyBlendedSelection(ctx, tempCanvas, selection)
@@ -701,13 +930,18 @@ function applyBlendedSelection(ctx: CanvasRenderingContext2D, sourceCanvas: HTML
 
   // For hard edge (no blending), just copy the region directly
   if (blendMode === "hard" || blendRadius === 0) {
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(x, y, width, height)
-    ctx.clip()
-    ctx.drawImage(sourceCanvas, 0, 0)
-    ctx.restore()
-    return
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
+    ctx.clearRect(x, y, width, height); // Remove original in selection
+    ctx.drawImage(
+      sourceCanvas,
+      x, y, width, height, // source rect
+      x, y, width, height  // destination rect
+    );
+    ctx.restore();
+    return;
   }
 
   // For other blend modes, we need to create a mask
@@ -796,11 +1030,25 @@ function applyBlendedSelection(ctx: CanvasRenderingContext2D, sourceCanvas: HTML
   }
 
   // Apply the masked image to the main canvas
-  ctx.save()
-  ctx.drawImage(sourceCanvas, 0, 0, ctx.canvas.width, ctx.canvas.height, 0, 0, ctx.canvas.width, ctx.canvas.height)
-  ctx.globalCompositeOperation = "destination-in"
-  ctx.drawImage(maskCanvas, 0, 0)
-  ctx.restore()
+  ctx.save();
+  // Draw the mask into an alpha channel
+  const maskedSketch = document.createElement('canvas');
+  maskedSketch.width = ctx.canvas.width;
+  maskedSketch.height = ctx.canvas.height;
+  const maskedSketchCtx = maskedSketch.getContext('2d');
+  if (!maskedSketchCtx) {
+    ctx.restore();
+    return;
+  }
+  // Draw the sketch
+  maskedSketchCtx.drawImage(sourceCanvas, 0, 0);
+  // Set mask as alpha
+  maskedSketchCtx.globalCompositeOperation = 'destination-in';
+  maskedSketchCtx.drawImage(maskCanvas, 0, 0);
+  maskedSketchCtx.globalCompositeOperation = 'source-over';
+  // Composite the result over the main canvas
+  ctx.drawImage(maskedSketch, 0, 0);
+  ctx.restore();
 }
 
 function applySketchEffect(

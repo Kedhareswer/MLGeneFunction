@@ -24,6 +24,8 @@ export interface Selection {
   blendRadius: number
 }
 
+export type NonSelectedAreaMode = 'original' | 'transparent';
+
 interface AreaSelectorProps {
   imageUrl: string
   selections: Selection[]
@@ -31,6 +33,9 @@ interface AreaSelectorProps {
   currentStyle: string
   currentSettings: Record<string, any>
   isActive: boolean
+  onGenerate?: () => void
+  nonSelectedAreaMode: NonSelectedAreaMode;
+  onNonSelectedAreaModeChange: (mode: NonSelectedAreaMode) => void;
 }
 
 export function AreaSelector({
@@ -40,6 +45,9 @@ export function AreaSelector({
   currentStyle,
   currentSettings,
   isActive,
+  onGenerate = () => {},
+  nonSelectedAreaMode,
+  onNonSelectedAreaModeChange,
 }: AreaSelectorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -55,107 +63,179 @@ export function AreaSelector({
   const [showBlendingPreview, setShowBlendingPreview] = useState(false)
   const [blendMode, setBlendMode] = useState<"hard" | "soft" | "gradient" | "feather">("soft")
   const [blendRadius, setBlendRadius] = useState(10)
+  // Live preview state
+  const [livePreviewUrl, setLivePreviewUrl] = useState<string | null>(null);
+  const [livePreviewRect, setLivePreviewRect] = useState<{x: number, y: number, width: number, height: number} | null>(null);
 
-  // Load the image and set up the canvas
+  // Load the image and set up the canvas only when imageUrl changes
   useEffect(() => {
-    if (!imageUrl || !canvasRef.current) return
-
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const img = new Image()
-    img.crossOrigin = "anonymous"
+    if (!imageUrl || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      // Set canvas size to match image
-      canvas.width = img.width
-      canvas.height = img.height
-      setImageSize({ width: img.width, height: img.height })
+      canvas.width = img.width;
+      canvas.height = img.height;
+      setImageSize({ width: img.width, height: img.height });
+      ctx.drawImage(img, 0, 0);
+      drawSelections(false);
+    };
+    img.src = imageUrl;
+  }, [imageUrl]);
 
-      // Draw image
-      ctx.drawImage(img, 0, 0)
-      drawSelections()
+  // Overlay live preview on canvas
+  useEffect(() => {
+    if (!canvasRef.current || !livePreviewUrl || !livePreviewRect) return;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+    const img = new window.Image();
+    img.onload = () => {
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(img, livePreviewRect.x, livePreviewRect.y, livePreviewRect.width, livePreviewRect.height);
+      ctx.restore();
+    };
+    img.src = livePreviewUrl;
+  }, [livePreviewUrl, livePreviewRect]);
+
+  // Redraw selections and always redraw image first
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      drawAllSelections(ctx);
+    };
+    img.src = imageUrl;
+  }, [selections, selectedSelectionId, showBlendingPreview, imageUrl]);
+
+  // Live preview effect: whenever currentRect changes (drawing or resizing), generate a preview
+  useEffect(() => {
+    if (!isDrawing && !isDragging) {
+      setLivePreviewUrl(null);
+      setLivePreviewRect(null);
+      return;
     }
-    img.src = imageUrl
-  }, [imageUrl])
+    // Only preview if rect is reasonable
+    if (currentRect.width > 5 && currentRect.height > 5 && imageUrl) {
+      // Fast preview: use a small offscreen canvas
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const previewCanvas = document.createElement('canvas');
+        previewCanvas.width = currentRect.width;
+        previewCanvas.height = currentRect.height;
+        const ctx = previewCanvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, currentRect.x, currentRect.y, currentRect.width, currentRect.height, 0, 0, currentRect.width, currentRect.height);
+        // Apply a quick sketch effect (use a simple grayscale for speed, or call a fast version of your sketch effect)
+        // For now, grayscale for speed:
+        const imageData = ctx.getImageData(0, 0, currentRect.width, currentRect.height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          const avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2]) / 3;
+          imageData.data[i] = avg;
+          imageData.data[i+1] = avg;
+          imageData.data[i+2] = avg;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        setLivePreviewUrl(previewCanvas.toDataURL('image/png'));
+        setLivePreviewRect({ ...currentRect });
+      };
+      img.src = imageUrl;
+    } else {
+      setLivePreviewUrl(null);
+      setLivePreviewRect(null);
+    }
+  }, [isDrawing, isDragging, currentRect, imageUrl]);
 
-  // Redraw selections when they change
-  useEffect(() => {
-    drawSelections()
-  }, [selections, selectedSelectionId, showBlendingPreview])
-
-  const drawSelections = () => {
-    if (!canvasRef.current) return
-
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    // Clear and redraw the image
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0)
-
+  // drawSelections: optionally redraw image, always redraw selections
+  const drawSelections = (redrawImage: boolean = false) => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (redrawImage) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        drawAllSelections(ctx);
+      };
+      img.src = imageUrl;
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Only draw image if already present (should be, due to initial effect)
+      // (Optional: could cache image)
       // Draw all selections
-      selections.forEach((selection) => {
-        ctx.save()
-
-        // Different styling for selected selection
-        if (selection.id === selectedSelectionId) {
-          ctx.strokeStyle = "#ff3d00"
-          ctx.lineWidth = 2
-        } else {
-          ctx.strokeStyle = "#ffffff"
-          ctx.lineWidth = 2
-        }
-
-        ctx.stroke(selection.path)
-
-        // Draw selection name
-        ctx.fillStyle = selection.id === selectedSelectionId ? "#ff3d00" : "#ffffff"
-        ctx.font = "14px sans-serif"
-        ctx.fillText(selection.name, selection.x + 5, selection.y + 20)
-
-        // Draw blend radius visualization if enabled
-        if (showBlendingPreview && selection.blendRadius > 0) {
-          // Create a path for the inner rectangle (original selection minus blend radius)
-          const innerX = selection.x + selection.blendRadius
-          const innerY = selection.y + selection.blendRadius
-          const innerWidth = Math.max(0, selection.width - 2 * selection.blendRadius)
-          const innerHeight = Math.max(0, selection.height - 2 * selection.blendRadius)
-
-          ctx.beginPath()
-          ctx.rect(innerX, innerY, innerWidth, innerHeight)
-          ctx.strokeStyle = selection.id === selectedSelectionId ? "rgba(255, 61, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"
-          ctx.setLineDash([5, 5])
-          ctx.stroke()
-          ctx.setLineDash([])
-
-          // Draw blend mode indicator
-          ctx.fillStyle = selection.id === selectedSelectionId ? "rgba(255, 61, 0, 0.8)" : "rgba(255, 255, 255, 0.8)"
-          ctx.font = "12px sans-serif"
-          ctx.fillText(
-            `${selection.blendMode} (${selection.blendRadius}px)`,
-            selection.x + 5,
-            selection.y + selection.height - 10,
-          )
-        }
-
-        ctx.restore()
-      })
-
-      // Draw current selection if drawing
-      if (currentPath && isDrawing) {
-        ctx.save()
-        ctx.strokeStyle = "#00ff00"
-        ctx.lineWidth = 2
-        ctx.stroke(currentPath)
-        ctx.restore()
-      }
+      drawAllSelections(ctx);
     }
-    img.src = imageUrl
+  }
+
+  // Helper to draw all selections
+  const drawAllSelections = (ctx: CanvasRenderingContext2D) => {
+    selections.forEach((selection) => {
+      ctx.save()
+
+      // Different styling for selected selection
+      if (selection.id === selectedSelectionId) {
+        ctx.strokeStyle = "#ff3d00"
+        ctx.lineWidth = 2
+      } else {
+        ctx.strokeStyle = "#ffffff"
+        ctx.lineWidth = 2
+      }
+
+      ctx.stroke(selection.path)
+
+      // Draw selection name
+      ctx.fillStyle = selection.id === selectedSelectionId ? "#ff3d00" : "#ffffff"
+      ctx.font = "14px sans-serif"
+      ctx.fillText(selection.name, selection.x + 5, selection.y + 20)
+
+      // Draw blend radius visualization if enabled
+      if (showBlendingPreview && selection.blendRadius > 0) {
+        // Create a path for the inner rectangle (original selection minus blend radius)
+        const innerX = selection.x + selection.blendRadius
+        const innerY = selection.y + selection.blendRadius
+        const innerWidth = Math.max(0, selection.width - 2 * selection.blendRadius)
+        const innerHeight = Math.max(0, selection.height - 2 * selection.blendRadius)
+
+        ctx.beginPath()
+        ctx.rect(innerX, innerY, innerWidth, innerHeight)
+        ctx.strokeStyle = selection.id === selectedSelectionId ? "rgba(255, 61, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"
+        ctx.setLineDash([5, 5])
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // Draw blend mode indicator
+        ctx.fillStyle = selection.id === selectedSelectionId ? "rgba(255, 61, 0, 0.8)" : "rgba(255, 255, 255, 0.8)"
+        ctx.font = "12px sans-serif"
+        ctx.fillText(
+          `${selection.blendMode} (${selection.blendRadius}px)`,
+          selection.x + 5,
+          selection.y + selection.height - 10,
+        )
+      }
+
+      ctx.restore()
+    })
+
+    // Draw current selection if drawing
+    if (currentPath && isDrawing) {
+      ctx.save()
+      ctx.strokeStyle = "#00ff00"
+      ctx.lineWidth = 2
+      ctx.stroke(currentPath)
+      ctx.restore()
+    }
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -246,7 +326,7 @@ export function AreaSelector({
       height,
     })
 
-    drawSelections()
+    drawSelections(false)
   }
 
   const handleMouseUp = () => {
@@ -358,6 +438,27 @@ export function AreaSelector({
             <p className="text-xs text-muted-foreground">
               {selections.length} area{selections.length !== 1 ? "s" : ""} selected
             </p>
+          </div>
+        )}
+        {selections.length > 0 && (
+          <div className="mb-2 flex gap-4 items-center">
+            <span className="text-sm font-medium">Non-selected area:</span>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="radio"
+                checked={nonSelectedAreaMode === 'original'}
+                onChange={() => onNonSelectedAreaModeChange('original')}
+              />
+              <span className="text-xs">Show original image</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="radio"
+                checked={nonSelectedAreaMode === 'transparent'}
+                onChange={() => onNonSelectedAreaModeChange('transparent')}
+              />
+              <span className="text-xs">Transparent (only show selected)</span>
+            </label>
           </div>
         )}
       </div>

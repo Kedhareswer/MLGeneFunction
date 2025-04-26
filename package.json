@@ -1,6 +1,6 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "imagetosketch",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -48,6 +48,7 @@
     "next": "15.2.4",
     "next-themes": "latest",
     "react": "^19",
+    "react-compare-image": "^3.5.4",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
     "react-hook-form": "^7.54.1",

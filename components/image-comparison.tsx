@@ -1,101 +1,164 @@
-"use client"
-
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
+import React, { useState } from "react";
+import CompareImage from "react-compare-image";
 
 interface ImageComparisonProps {
-  originalImage: string
-  sketchImage: string
+  originalImage: string;
+  sketchImage: string;
 }
 
 export function ImageComparison({ originalImage, sketchImage }: ImageComparisonProps) {
-  const [position, setPosition] = useState(50)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-
-  const handleSliderChange = (value: number[]) => {
-    setPosition(value[0])
-  }
-
-  const handleMouseDown = () => {
-    setIsDragging(true)
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return
-
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
-    const newPosition = (x / rect.width) * 100
-
-    setPosition(newPosition)
-  }
-
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsDragging(false)
-    }
-
-    window.addEventListener("mouseup", handleGlobalMouseUp)
-    return () => {
-      window.removeEventListener("mouseup", handleGlobalMouseUp)
-    }
-  }, [])
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <h3 className="mb-2 font-medium text-center">Compare Original & Sketch</h3>
-
-        <div
-          ref={containerRef}
-          className="relative h-[300px] overflow-hidden rounded-md cursor-col-resize"
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
+    <div
+      style={{
+        background: "#181818",
+        borderRadius: "16px",
+        padding: "24px",
+        maxWidth: 350,
+        margin: "auto",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        position: "relative",
+      }}
+    >
+      <h3 style={{ color: "white", textAlign: "center", marginBottom: 16 }}>
+        Compare Original & Sketch
+      </h3>
+      <div style={{ position: "relative" }}>
+        {/* Fullscreen button for original image (left) */}
+        <button
+          title="Fullscreen Original"
+          style={{
+            position: "absolute",
+            left: 8,
+            top: 8,
+            zIndex: 2,
+            background: "rgba(0,0,0,0.5)",
+            border: "none",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+          onClick={() => setFullscreenImg(originalImage)}
         >
-          <div className="absolute inset-0 w-full h-full">
-            <img
-              src={sketchImage || "/placeholder.svg"}
-              alt="Sketch"
-              className="absolute inset-0 w-full h-full object-cover"
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        {/* Fullscreen button for sketch image (right) */}
+        <button
+          title="Fullscreen Sketch"
+          style={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            zIndex: 2,
+            background: "rgba(0,0,0,0.5)",
+            border: "none",
+            borderRadius: "50%",
+            width: 32,
+            height: 32,
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+          onClick={() => setFullscreenImg(sketchImage)}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8V3H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M17 8V3H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 12V17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M17 12V17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <CompareImage
+          leftImage={originalImage}
+          rightImage={sketchImage}
+          sliderLineWidth={4}
+          sliderLineColor="#fff"
+          handleSize={40}
+          handle={
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: "#fff",
+                borderRadius: "50%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                border: "2px solid #888",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             />
-          </div>
+          }
+          aspectRatio="taller"
+        />
+      </div>
 
-          <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ width: `${position}%` }}>
-            <img
-              src={originalImage || "/placeholder.svg"}
-              alt="Original"
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ width: `${100 / (position / 100)}%` }}
-            />
-          </div>
-
-          <div className="absolute inset-y-0 w-0.5 bg-white shadow-lg" style={{ left: `${position}%` }}>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-primary rounded-full"></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <Slider
-            value={[position]}
-            min={0}
-            max={100}
-            step={0.1}
-            onValueChange={handleSliderChange}
-            aria-label="Image comparison slider"
+      {/* Fullscreen Modal */}
+      {fullscreenImg && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.95)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setFullscreenImg(null)}
+        >
+          <img
+            src={fullscreenImg}
+            alt="Fullscreen preview"
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              borderRadius: 12,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
+            }}
           />
+          {/* Close button */}
+          <button
+            onClick={e => { e.stopPropagation(); setFullscreenImg(null); }}
+            style={{
+              position: "fixed",
+              top: 24,
+              right: 32,
+              background: "rgba(0,0,0,0.7)",
+              border: "none",
+              borderRadius: "50%",
+              width: 40,
+              height: 40,
+              color: "#fff",
+              fontSize: 28,
+              cursor: "pointer",
+              zIndex: 1001,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            aria-label="Close fullscreen"
+          >
+            ×
+          </button>
         </div>
-      </CardContent>
-    </Card>
-  )
+      )}
+    </div>
+  );
 }
