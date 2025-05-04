@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { NotificationBanner } from "@/components/notification-banner"
+import { Analytics } from "@vercel/analytics/react"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,6 +32,7 @@ export default function RootLayout({
             </div>
             <main className="flex-1">{children}</main>
             <Footer />
+            <Analytics />
           </div>
         </ThemeProvider>
       </body>
