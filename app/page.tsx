@@ -3,9 +3,13 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Pencil, ImageIcon, Zap } from "lucide-react"
 
+import SeoMeta from "./seo-meta";
+
 export default function Home() {
   return (
-    <div className="flex flex-col items-center">
+    <>
+      <SeoMeta />
+      <div className="flex flex-col items-center">
       {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 overflow-hidden">
         <div className="container px-4 md:px-6 relative">
@@ -151,5 +155,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   )
 }

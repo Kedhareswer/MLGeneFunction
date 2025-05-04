@@ -174,13 +174,14 @@ export function AreaSelector({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // Only draw image if already present (should be, due to initial effect)
       // (Optional: could cache image)
-      // Draw all selections
-      drawAllSelections(ctx);
+      // Draw all selections with blending
+      drawAllSelections(ctx, true);
     }
   }
 
   // Helper to draw all selections
-  const drawAllSelections = (ctx: CanvasRenderingContext2D) => {
+  // If 'applyBlending' is true, apply blending logic
+  const drawAllSelections = (ctx: CanvasRenderingContext2D, applyBlending: boolean = false) => {
     selections.forEach((selection) => {
       ctx.save()
 
@@ -191,6 +192,84 @@ export function AreaSelector({
       } else {
         ctx.strokeStyle = "#ffffff"
         ctx.lineWidth = 2
+      }
+
+      ctx.save();
+
+      // --- ADVANCED BLENDING/FEATHERING ---
+      if (applyBlending && selection.blendMode !== "hard" && selection.blendRadius > 0) {
+        // Create a mask with feathered/gradient edge and edge-awareness
+        const maskCanvas = document.createElement("canvas");
+        maskCanvas.width = ctx.canvas.width;
+        maskCanvas.height = ctx.canvas.height;
+        const maskCtx = maskCanvas.getContext("2d")!;
+
+        // Draw selection path as mask
+        maskCtx.save();
+        maskCtx.beginPath();
+        maskCtx.rect(selection.x, selection.y, selection.width, selection.height);
+        maskCtx.closePath();
+        maskCtx.fillStyle = "white";
+        maskCtx.fill();
+        maskCtx.restore();
+
+        // --- Edge-aware feathering: Sobel edge detection ---
+        // 1. Get original image data
+        const originalImage = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        // 2. Compute Sobel edge magnitude (grayscale)
+        const sobelData = new Uint8ClampedArray(originalImage.width * originalImage.height);
+        const w = originalImage.width, h = originalImage.height;
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            // Sobel kernels
+            let gx = 0, gy = 0;
+            for (let ky = -1; ky <= 1; ky++) {
+              for (let kx = -1; kx <= 1; kx++) {
+                const idx = ((y + ky) * w + (x + kx)) * 4;
+                const gray = (originalImage.data[idx] + originalImage.data[idx + 1] + originalImage.data[idx + 2]) / 3;
+                const wx = [[-1,0,1],[-2,0,2],[-1,0,1]][ky+1][kx+1];
+                const wy = [[-1,-2,-1],[0,0,0],[1,2,1]][ky+1][kx+1];
+                gx += wx * gray;
+                gy += wy * gray;
+              }
+            }
+            const mag = Math.sqrt(gx * gx + gy * gy);
+            sobelData[y * w + x] = Math.min(255, mag);
+          }
+        }
+        // 3. Feather/gradient/soft mask with edge-awareness
+        const maskImage = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+        for (let y = 0; y < maskCanvas.height; y++) {
+          for (let x = 0; x < maskCanvas.width; x++) {
+            const idx = (y * maskCanvas.width + x) * 4;
+            // Distance from edge of selection
+            const dx = Math.max(selection.x - x, 0, x - (selection.x + selection.width - 1));
+            const dy = Math.max(selection.y - y, 0, y - (selection.y + selection.height - 1));
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            let alpha = 1;
+            if (dist > 0 && dist < selection.blendRadius) {
+              // Edge-aware feathering: reduce alpha if strong edge nearby
+              const sobelMag = sobelData[y * w + x] || 0;
+              const edgeFactor = 1 - Math.min(1, sobelMag / 128); // 0 (strong edge) to 1 (no edge)
+              alpha = (1 - dist / selection.blendRadius) * edgeFactor;
+            } else if (dist >= selection.blendRadius) {
+              alpha = 0;
+            }
+            // Color/tone matching: interpolate color at edge
+            // (For demo: just fade alpha, but could sample average color at edge and blend)
+            maskImage.data[idx + 3] = Math.floor(maskImage.data[idx + 3] * alpha);
+          }
+        }
+        maskCtx.putImageData(maskImage, 0, 0);
+
+        // --- Multi-layer compositing: blend modes ---
+        ctx.save();
+        if (selection.blendMode === "soft") ctx.globalAlpha = 0.8;
+        if (selection.blendMode === "gradient") ctx.globalAlpha = 0.65;
+        if (selection.blendMode === "feather") ctx.globalAlpha = 0.5;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.restore();
       }
 
       ctx.stroke(selection.path)

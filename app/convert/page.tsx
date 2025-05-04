@@ -16,6 +16,8 @@ import { ProgressIndicator } from "@/components/progress-indicator"
 import { ImageComparison } from "@/components/image-comparison"
 import { AreaSelector, type Selection, type NonSelectedAreaMode } from "@/components/area-selector"
 
+import { AnimatedSketchButton } from "./AnimatedSketchButton";
+
 export default function ConvertPage() {
   const [fullscreenImg, setFullscreenImg] = useState<null | 'original' | 'sketch'>(null);
   // Popup for wait suggestion (show only once per session)
@@ -70,6 +72,10 @@ export default function ConvertPage() {
 
     setSketch(processedSketch)
     setIsProcessing(false)
+    // Expose applySketchEffect to window for animation
+    if (typeof window !== "undefined" && (window as any).applySketchEffect === undefined) {
+      (window as any).applySketchEffect = applySketchEffect;
+    }
   }
 
   const handleSettingChange = (key: string, value: number | string) => {

@@ -13,18 +13,38 @@ export function ImageComparison({ originalImage, sketchImage }: ImageComparisonP
     <div
       style={{
         background: "#181818",
-        borderRadius: "16px",
-        padding: "24px",
-        maxWidth: 350,
-        margin: "auto",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        borderRadius: "24px",
+        padding: "32px 32px 40px 32px",
+        maxWidth: 650,
+        minWidth: 320,
+        width: "100%",
+        margin: "40px auto",
+        boxShadow: "0 6px 32px rgba(0,0,0,0.5)",
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
       <h3 style={{ color: "white", textAlign: "center", marginBottom: 16 }}>
         Compare Original & Sketch
       </h3>
-      <div style={{ position: "relative" }}>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          minWidth: 260,
+          maxWidth: 550,
+          aspectRatio: "16/9",
+          margin: "0 auto 16px auto",
+          background: "#222",
+          borderRadius: "18px",
+          padding: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         {/* Fullscreen button for original image (left) */}
         <button
           title="Fullscreen Original"
