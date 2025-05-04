@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Image to Sketch | Deep Learning Art Transformation",
   description: "Transform your digital images into authentic hand-drawn sketches using our deep learning model.",
-    generator: 'v0.dev'
+    generator: 'by.me'
 }
 
 export default function RootLayout({
