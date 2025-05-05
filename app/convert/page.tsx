@@ -23,7 +23,6 @@ export default function ConvertPage() {
   // Popup for wait suggestion (show only once per session)
   const [showWaitPopup, setShowWaitPopup] = useState(false);
   const [hasSeenWaitPopup, setHasSeenWaitPopup] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(true);
   const [image, setImage] = useState<string | null>(null)
   const [sketch, setSketch] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -204,22 +203,7 @@ export default function ConvertPage() {
   }
 
   return (
-    <>
-      {isFirstVisit && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setIsFirstVisit(false)}>
-          <div className="bg-white rounded-lg p-8 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-semibold text-lg mb-4">Welcome to Sketch Converter</h3>
-            <p className="text-gray-700 mb-6">
-              Please be patient as our AI processes your image. It may take up to 15 seconds.
-              If it takes longer, please refresh the page and try again.
-            </p>
-            <Button className="w-full" onClick={() => setIsFirstVisit(false)}>
-              Got it!
-            </Button>
-          </div>
-        </div>
-      )}
-      <div className="container py-8 md:py-12">
+    <div className="container py-8 md:py-12">
       <div className="mx-auto max-w-5xl space-y-8">
 
         {/* Fullscreen Modal for Original/Sketch */}
