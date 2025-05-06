@@ -1,6 +1,6 @@
 # Hand-Drawn Sketch Generator
 
-![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/MLGeneFunction?style=social) ![GitHub forks](https://img.shields.io/github/forks/Kedhareswer/MLGeneFunction?style=social) ![GitHub issues](https://img.shields.io/github/issues/Kedhareswer/MLGeneFunction) ![GitHub license](https://img.shields.io/github/license/Kedhareswer/MLGeneFunction)
+![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/MLGeneFunction?style=social&color=black) ![GitHub forks](https://img.shields.io/github/forks/Kedhareswer/MLGeneFunction?style=social&color=black) ![GitHub issues](https://img.shields.io/github/issues/Kedhareswer/MLGeneFunction?color=black) ![GitHub license](https://img.shields.io/github/license/Kedhareswer/MLGeneFunction?color=black)
 
 ## Table of Contents
 - [Overview](#overview)
@@ -57,11 +57,9 @@ Dataset: CUHK Face Sketch Database (CUFS), containing pairs of photos and corres
 
 Preprocessing: Resized and normalized images, and applied transformations to enhance model robustness.
 
-
 Model Architecture:
 
 Developed a deep neural network tailored to produce clear, detailed sketches. The model was iteratively optimized to capture fine line work and shading, improving the authenticity of each sketch.
-
 
 Training:
 
@@ -69,15 +67,11 @@ Experimented with various neural network layers and configurations.
 
 Fine-tuned hyperparameters to achieve optimal sketch quality, balancing model complexity with training time.
 
-
-
 Evaluation:
 
 Used metrics such as Mean Absolute Error (MAE) and Structural Similarity Index (SSIM) to evaluate the fidelity of generated sketches compared to the ground truth.
 
 Conducted qualitative assessments to ensure the model accurately represented key facial features and textures.
-
-
 
 🚀 Results
 
@@ -92,21 +86,15 @@ Input Image:
 Output Sketch:
 ![hand-drawn-sketch](https://github.com/user-attachments/assets/47a7cb65-61f7-41e1-be80-01d5491c5ee3)
 
-
-
 📈 Key Insights
 
 The model successfully learned to generate consistent, hand-drawn-like sketches.
 Fine-tuning layers and experimenting with hyperparameters were crucial to achieving high-quality sketches.
 
-
-
 📝 Future Work
 
 Experimenting with larger datasets for broader generalization.
 Extending the model to support different artistic styles beyond sketching.
-
-
 
 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
