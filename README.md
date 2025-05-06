@@ -1,6 +1,6 @@
 # Hand-Drawn Sketch Generator
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/yourrepository?style=social) ![GitHub forks](https://img.shields.io/github/forks/yourusername/yourrepository?style=social) ![GitHub issues](https://img.shields.io/github/issues/yourusername/yourrepository) ![GitHub license](https://img.shields.io/github/license/yourusername/yourrepository)
+![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/MLGeneFunction?style=social) ![GitHub forks](https://img.shields.io/github/forks/Kedhareswer/MLGeneFunction?style=social) ![GitHub issues](https://img.shields.io/github/issues/Kedhareswer/MLGeneFunction) ![GitHub license](https://img.shields.io/github/license/Kedhareswer/MLGeneFunction)
 
 ## Table of Contents
 - [Overview](#overview)
