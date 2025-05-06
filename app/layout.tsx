@@ -28,7 +28,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <div className="container mt-4">
-              <NotificationBanner message="Welcome to Image to Sketch! We've added new sharing features and accessibility improvements." />
+              <NotificationBanner message="Welcome to Image to Sketch! We've added new Styles and Area Selection Modes." />
             </div>
             <main className="flex-1">{children}</main>
             <Footer />

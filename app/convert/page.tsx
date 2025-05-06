@@ -40,6 +40,10 @@ export default function ConvertPage() {
     woodcutBoldness: 50, // Edge boldness
     etchingDepth: 50, // Line depth
     conteSoftness: 50, // Softness of strokes
+    // New styles
+    stipplingDensity: 50, // Dot density for Stippling
+    hatchingAngle: 45, // Angle for Hatching lines
+    hatchingSpacing: 5, // Spacing for Hatching lines
   })
   const { toast } = useToast()
   const [isSharing, setIsSharing] = useState(false)
@@ -129,6 +133,9 @@ export default function ConvertPage() {
       woodcutBoldness: 50,
       etchingDepth: 50,
       conteSoftness: 50,
+      stipplingDensity: 50,
+      hatchingAngle: 45,
+      hatchingSpacing: 5,
     })
   }
 
@@ -197,6 +204,10 @@ export default function ConvertPage() {
         return { ...baseSettings, etchingDepth: settings.etchingDepth }
       case "conte":
         return { ...baseSettings, conteSoftness: settings.conteSoftness }
+      case "stippling":
+        return { ...baseSettings, stipplingDensity: settings.stipplingDensity }
+      case "hatching":
+        return { ...baseSettings, hatchingAngle: settings.hatchingAngle, hatchingSpacing: settings.hatchingSpacing }
       default:
         return baseSettings
     }
@@ -582,9 +593,13 @@ export default function ConvertPage() {
                         <TabsTrigger value="etching">Etching</TabsTrigger>
                         <TabsTrigger value="ink">Ink Wash</TabsTrigger>
                       </TabsList>
-                      <TabsList className="grid w-full grid-cols-2">
+                      <TabsList className="grid w-full grid-cols-2 mb-2">
                         <TabsTrigger value="conte">Conte</TabsTrigger>
                         <TabsTrigger value="woodcut">Woodcut</TabsTrigger>
+                      </TabsList>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="stippling">Stippling</TabsTrigger>
+                        <TabsTrigger value="hatching">Hatching</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -798,6 +813,58 @@ export default function ConvertPage() {
                       <p className="text-xs text-muted-foreground mt-1">
                         Controls the softness of the conte crayon effect. Higher values create softer, more blended
                         strokes.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "stippling" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="stipplingDensity">Stippling Density</Label>
+                        <span className="text-sm text-muted-foreground">{settings.stipplingDensity}%</span>
+                      </div>
+                      <Slider
+                        id="stipplingDensity"
+                        value={[settings.stipplingDensity]}
+                        onValueChange={([val]) => handleSettingChange("stipplingDensity", val)}
+                        min={10}
+                        max={100}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the density of dots in the stippling effect. Higher values create a denser, darker sketch.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "hatching" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="hatchingAngle">Hatching Angle</Label>
+                        <span className="text-sm text-muted-foreground">{settings.hatchingAngle}°</span>
+                      </div>
+                      <Slider
+                        id="hatchingAngle"
+                        value={[settings.hatchingAngle]}
+                        onValueChange={([val]) => handleSettingChange("hatchingAngle", val)}
+                        min={0}
+                        max={180}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="hatchingSpacing">Hatching Spacing</Label>
+                        <span className="text-sm text-muted-foreground">{settings.hatchingSpacing}px</span>
+                      </div>
+                      <Slider
+                        id="hatchingSpacing"
+                        value={[settings.hatchingSpacing]}
+                        onValueChange={([val]) => handleSettingChange("hatchingSpacing", val)}
+                        min={1}
+                        max={20}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Controls the angle and spacing of lines in the hatching effect.
                       </p>
                     </div>
                   )}
@@ -1119,6 +1186,12 @@ function applySketchEffect(
     case "conte":
       applyConteEffect(ctx, edges, width, height, settings)
       break
+    case "stippling":
+      applyStipplingEffect(ctx, edges, width, height, settings)
+      break
+    case "hatching":
+      applyHatchingEffect(ctx, edges, width, height, settings)
+      break
   }
 }
 
@@ -1155,6 +1228,70 @@ function detectEdges(imageData: ImageData, sensitivity: number): Uint8ClampedArr
   }
 
   return edges
+}
+
+function applyStipplingEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: any
+) {
+  ctx.fillStyle = 'black';
+  const dotSize = 1;
+  const density = settings.stipplingDensity / 50; // Convert 0-100 to 0-2 range
+  
+  for (let y = 0; y < height; y += 3) {
+    for (let x = 0; x < width; x += 3) {
+      const idx = y * width + x;
+      const edgeValue = edges[idx];
+      
+      // Calculate probability based on edge value and density
+      const probability = (edgeValue / 255) * density;
+      
+      if (Math.random() < probability) {
+        ctx.beginPath();
+        ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function applyHatchingEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: any
+) {
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  
+  const angle = (settings.hatchingAngle * Math.PI) / 180;
+  const spacing = settings.hatchingSpacing;
+  const lineLength = 10;
+  
+  // Calculate the offset for diagonal lines
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  
+  for (let y = 0; y < height; y += spacing) {
+    for (let x = 0; x < width; x += spacing) {
+      const idx = y * width + x;
+      const edgeValue = edges[idx];
+      
+      if (edgeValue > 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(
+          x + lineLength * cos,
+          y + lineLength * sin
+        );
+        ctx.stroke();
+      }
+    }
+  }
 }
 
 function applyPencilEffect(
