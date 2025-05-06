@@ -1,6 +1,15 @@
 # Hand-Drawn Sketch Generator
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/yourrepository?style=social)
+![GitHub stars](https://img.shields.io/github/stars/yourusername/yourrepository?style=social) ![GitHub forks](https://img.shields.io/github/forks/yourusername/yourrepository?style=social) ![GitHub issues](https://img.shields.io/github/issues/yourusername/yourrepository) ![GitHub license](https://img.shields.io/github/license/yourusername/yourrepository)
+
+## Table of Contents
+- [Overview](#overview)
+- [Highlights](#highlights)
+- [Usage](#usage)
+- [Customization Options](#customization-options)
+- [Requirements](#requirements)
+- [Contributing](#contributing)
+- [Future Work](#future-work)
 
 ## Overview
 This project provides a web-based tool to convert uploaded images into hand-drawn sketches. Users can customize the sketch style and adjust various parameters to achieve different artistic effects.
