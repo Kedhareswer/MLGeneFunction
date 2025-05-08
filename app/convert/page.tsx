@@ -19,6 +19,7 @@ import { AreaSelector, type Selection, type NonSelectedAreaMode } from "@/compon
 import { AnimatedSketchButton } from "./AnimatedSketchButton";
 
 export default function ConvertPage() {
+  const [selectedCategory, setSelectedCategory] = useState<'artistic' | 'technical'>('artistic');
   const [fullscreenImg, setFullscreenImg] = useState<null | 'original' | 'sketch'>(null);
   // Popup for wait suggestion (show only once per session)
   const [showWaitPopup, setShowWaitPopup] = useState(false);
@@ -26,24 +27,70 @@ export default function ConvertPage() {
   const [image, setImage] = useState<string | null>(null)
   const [sketch, setSketch] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const styleCategories = {
+    artistic: [
+      "pencil",
+      "charcoal",
+      "ink",
+      "conte",
+      "scribble",
+      "gesture",
+      "lithograph",
+      "stippling"
+    ],
+    technical: [
+      "detailed",
+      "crosshatch",
+      "geometric",
+      "topographic",
+      "blueprint",
+      "architectural",
+      "woodcut"
+    ]
+  }
+
   const [settings, setSettings] = useState({
     style: "pencil",
     lineStrength: 50,
     detail: 50,
     shading: 30,
-    // Style-specific settings
+    // Artistic style settings
     pencilHardness: 3, // 1-5 (soft to hard)
     charcoalTexture: 50, // Texture grain
-    detailedDensity: 50, // Line density
-    crosshatchAngle: 45, // Angle variation
     inkTexture: 50, // Brush texture
-    woodcutBoldness: 50, // Edge boldness
-    etchingDepth: 50, // Line depth
     conteSoftness: 50, // Softness of strokes
-    // New styles
+    scribbleDensity: 50, // Density of scribble lines
+    lineRandomness: 50, // Randomness of line placement
+    strokeDirection: 0, // Direction of scribble strokes (0-360)
+    gestureLineFluidity: 50, // Line fluidity
+    gestureStrokePressure: 50, // Stroke pressure
+    gestureMovementIntensity: 50, // Movement intensity
+    brushRoughness: 50, // Roughness of brush strokes
+    brushDirection: 0, // Direction of brush strokes (0-360)
+    edgeEmphasis: 50, // Emphasis on edges
+    grainDensity: 50, // Density of grain pattern
+    toneContrast: 50, // Contrast in tonal values
+    patternScale: 50, // Scale of lithograph pattern
+    etchingDepth: 50, // Line depth
     stipplingDensity: 50, // Dot density for Stippling
     hatchingAngle: 45, // Angle for Hatching lines
     hatchingSpacing: 5, // Spacing for Hatching lines
+    // Technical style settings
+    detailedDensity: 50, // Line density
+    crosshatchAngle: 45, // Angle variation
+    shapeComplexity: 50, // Complexity of geometric shapes
+    edgeThreshold: 50, // Edge detection sensitivity
+    minShapeSize: 10, // Minimum size of geometric shapes
+    topographicDensity: 50, // Contour density
+    topographicThickness: 50, // Line thickness
+    topographicSensitivity: 50, // Height sensitivity
+    blueprintPrecision: 50, // Grid precision
+    blueprintWeight: 50, // Line weight
+    blueprintDetail: 50, // Detail level
+    architecturalLineHierarchy: 50, // Line hierarchy
+    architecturalDetailLevel: 50, // Detail level
+    architecturalScalePrecision: 50, // Scale precision
+    woodcutBoldness: 50 // Edge boldness
   })
   const { toast } = useToast()
   const [isSharing, setIsSharing] = useState(false)
@@ -127,15 +174,39 @@ export default function ConvertPage() {
       shading: 30,
       pencilHardness: 3,
       charcoalTexture: 50,
-      detailedDensity: 50,
-      crosshatchAngle: 45,
       inkTexture: 50,
-      woodcutBoldness: 50,
-      etchingDepth: 50,
       conteSoftness: 50,
+      scribbleDensity: 50,
+      lineRandomness: 50,
+      strokeDirection: 0,
+      gestureLineFluidity: 50,
+      gestureStrokePressure: 50,
+      gestureMovementIntensity: 50,
+      brushRoughness: 50,
+      brushDirection: 0,
+      edgeEmphasis: 50,
+      grainDensity: 50,
+      toneContrast: 50,
+      patternScale: 50,
+      etchingDepth: 50,
       stipplingDensity: 50,
       hatchingAngle: 45,
       hatchingSpacing: 5,
+      detailedDensity: 50,
+      crosshatchAngle: 45,
+      shapeComplexity: 50,
+      edgeThreshold: 50,
+      minShapeSize: 10,
+      topographicDensity: 50,
+      topographicThickness: 50,
+      topographicSensitivity: 50,
+      blueprintPrecision: 50,
+      blueprintWeight: 50,
+      blueprintDetail: 50,
+      architecturalLineHierarchy: 50,
+      architecturalDetailLevel: 50,
+      architecturalScalePrecision: 50,
+      woodcutBoldness: 50
     })
   }
 
@@ -188,26 +259,45 @@ export default function ConvertPage() {
     }
 
     switch (settings.style) {
+      // Artistic Styles
       case "pencil":
         return { ...baseSettings, pencilHardness: settings.pencilHardness }
       case "charcoal":
         return { ...baseSettings, charcoalTexture: settings.charcoalTexture }
-      case "detailed":
-        return { ...baseSettings, detailedDensity: settings.detailedDensity }
-      case "crosshatch":
-        return { ...baseSettings, crosshatchAngle: settings.crosshatchAngle }
       case "ink":
         return { ...baseSettings, inkTexture: settings.inkTexture }
-      case "woodcut":
-        return { ...baseSettings, woodcutBoldness: settings.woodcutBoldness }
-      case "etching":
-        return { ...baseSettings, etchingDepth: settings.etchingDepth }
       case "conte":
         return { ...baseSettings, conteSoftness: settings.conteSoftness }
+      case "scribble":
+        return { ...baseSettings, scribbleDensity: settings.scribbleDensity, lineRandomness: settings.lineRandomness, strokeDirection: settings.strokeDirection }
+      case "gesture":
+        return { ...baseSettings, gestureLineFluidity: settings.gestureLineFluidity, gestureStrokePressure: settings.gestureStrokePressure, gestureMovementIntensity: settings.gestureMovementIntensity }
+      case "drybrush":
+        return { ...baseSettings, brushRoughness: settings.brushRoughness, brushDirection: settings.brushDirection, edgeEmphasis: settings.edgeEmphasis }
+      case "lithograph":
+        return { ...baseSettings, grainDensity: settings.grainDensity, toneContrast: settings.toneContrast, patternScale: settings.patternScale }
+      case "etching":
+        return { ...baseSettings, etchingDepth: settings.etchingDepth }
       case "stippling":
         return { ...baseSettings, stipplingDensity: settings.stipplingDensity }
       case "hatching":
         return { ...baseSettings, hatchingAngle: settings.hatchingAngle, hatchingSpacing: settings.hatchingSpacing }
+      
+      // Technical Styles
+      case "detailed":
+        return { ...baseSettings, detailedDensity: settings.detailedDensity }
+      case "crosshatch":
+        return { ...baseSettings, crosshatchAngle: settings.crosshatchAngle }
+      case "geometric":
+        return { ...baseSettings, shapeComplexity: settings.shapeComplexity, edgeThreshold: settings.edgeThreshold, minShapeSize: settings.minShapeSize }
+      case "topographic":
+        return { ...baseSettings, topographicDensity: settings.topographicDensity, topographicThickness: settings.topographicThickness, topographicSensitivity: settings.topographicSensitivity }
+      case "blueprint":
+        return { ...baseSettings, blueprintPrecision: settings.blueprintPrecision, blueprintWeight: settings.blueprintWeight, blueprintDetail: settings.blueprintDetail }
+      case "architectural":
+        return { ...baseSettings, architecturalLineHierarchy: settings.architecturalLineHierarchy, architecturalDetailLevel: settings.architecturalDetailLevel, architecturalScalePrecision: settings.architecturalScalePrecision }
+      case "woodcut":
+        return { ...baseSettings, woodcutBoldness: settings.woodcutBoldness }
       default:
         return baseSettings
     }
@@ -576,32 +666,29 @@ export default function ConvertPage() {
                   <div className="space-y-2">
                     <Label htmlFor="style">Sketch Style</Label>
                     <Tabs
-                      defaultValue="pencil"
-                      value={settings.style}
-                      onValueChange={(value) => handleSettingChange("style", value)}
+                      defaultValue="artistic"
+                      value={selectedCategory}
+                      onValueChange={(value) => setSelectedCategory(value as 'artistic' | 'technical')}
                       className="w-full"
                     >
-                      <TabsList className="grid w-full grid-cols-2 mb-2">
-                        <TabsTrigger value="pencil">Pencil</TabsTrigger>
-                        <TabsTrigger value="charcoal">Charcoal</TabsTrigger>
-                      </TabsList>
-                      <TabsList className="grid w-full grid-cols-2 mb-2">
-                        <TabsTrigger value="detailed">Detailed</TabsTrigger>
-                        <TabsTrigger value="crosshatch">Crosshatch</TabsTrigger>
-                      </TabsList>
-                      <TabsList className="grid w-full grid-cols-2 mb-2">
-                        <TabsTrigger value="etching">Etching</TabsTrigger>
-                        <TabsTrigger value="ink">Ink Wash</TabsTrigger>
-                      </TabsList>
-                      <TabsList className="grid w-full grid-cols-2 mb-2">
-                        <TabsTrigger value="conte">Conte</TabsTrigger>
-                        <TabsTrigger value="woodcut">Woodcut</TabsTrigger>
-                      </TabsList>
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="stippling">Stippling</TabsTrigger>
-                        <TabsTrigger value="hatching">Hatching</TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="artistic">Artistic</TabsTrigger>
+                        <TabsTrigger value="technical">Technical</TabsTrigger>
                       </TabsList>
                     </Tabs>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      {styleCategories[selectedCategory as keyof typeof styleCategories].map((style) => (
+                        <Button
+                          key={style}
+                          variant={settings.style === style ? "default" : "outline"}
+                          className="w-full capitalize"
+                          onClick={() => handleSettingChange("style", style)}
+                        >
+                          {style}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -754,6 +841,182 @@ export default function ConvertPage() {
                     </div>
                   )}
 
+                  {settings.style === "scribble" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="scribbleDensity">Scribble Density</Label>
+                        <span className="text-sm text-muted-foreground">{settings.scribbleDensity}%</span>
+                      </div>
+                      <Slider
+                        id="scribbleDensity"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.scribbleDensity || 50]}
+                        onValueChange={(value) => handleSettingChange("scribbleDensity", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="lineRandomness">Line Randomness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.lineRandomness}%</span>
+                      </div>
+                      <Slider
+                        id="lineRandomness"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.lineRandomness || 50]}
+                        onValueChange={(value) => handleSettingChange("lineRandomness", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="strokeDirection">Stroke Direction</Label>
+                        <span className="text-sm text-muted-foreground">{settings.strokeDirection}°</span>
+                      </div>
+                      <Slider
+                        id="strokeDirection"
+                        min={0}
+                        max={360}
+                        step={15}
+                        value={[settings.strokeDirection || 0]}
+                        onValueChange={(value) => handleSettingChange("strokeDirection", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Energetic, loose sketching style with overlapping lines for shading.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "geometric" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="shapeComplexity">Shape Complexity</Label>
+                        <span className="text-sm text-muted-foreground">{settings.shapeComplexity}%</span>
+                      </div>
+                      <Slider
+                        id="shapeComplexity"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.shapeComplexity || 50]}
+                        onValueChange={(value) => handleSettingChange("shapeComplexity", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="edgeThreshold">Edge Detection</Label>
+                        <span className="text-sm text-muted-foreground">{settings.edgeThreshold}%</span>
+                      </div>
+                      <Slider
+                        id="edgeThreshold"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.edgeThreshold || 50]}
+                        onValueChange={(value) => handleSettingChange("edgeThreshold", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="minShapeSize">Minimum Shape Size</Label>
+                        <span className="text-sm text-muted-foreground">{settings.minShapeSize}px</span>
+                      </div>
+                      <Slider
+                        id="minShapeSize"
+                        min={1}
+                        max={50}
+                        step={1}
+                        value={[settings.minShapeSize || 10]}
+                        onValueChange={(value) => handleSettingChange("minShapeSize", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Clean, modern aesthetic using geometric shapes.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "drybrush" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="brushRoughness">Brush Roughness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.brushRoughness}%</span>
+                      </div>
+                      <Slider
+                        id="brushRoughness"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.brushRoughness || 50]}
+                        onValueChange={(value) => handleSettingChange("brushRoughness", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="brushDirection">Stroke Direction</Label>
+                        <span className="text-sm text-muted-foreground">{settings.brushDirection}°</span>
+                      </div>
+                      <Slider
+                        id="brushDirection"
+                        min={0}
+                        max={360}
+                        step={15}
+                        value={[settings.brushDirection || 0]}
+                        onValueChange={(value) => handleSettingChange("brushDirection", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="edgeEmphasis">Edge Emphasis</Label>
+                        <span className="text-sm text-muted-foreground">{settings.edgeEmphasis}%</span>
+                      </div>
+                      <Slider
+                        id="edgeEmphasis"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.edgeEmphasis || 50]}
+                        onValueChange={(value) => handleSettingChange("edgeEmphasis", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Rough, textured strokes with dramatic contrast.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "lithograph" && (
+                    <div className="space-y-2 mt-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="grainDensity">Grain Density</Label>
+                        <span className="text-sm text-muted-foreground">{settings.grainDensity}%</span>
+                      </div>
+                      <Slider
+                        id="grainDensity"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.grainDensity || 50]}
+                        onValueChange={(value) => handleSettingChange("grainDensity", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="toneContrast">Tone Contrast</Label>
+                        <span className="text-sm text-muted-foreground">{settings.toneContrast}%</span>
+                      </div>
+                      <Slider
+                        id="toneContrast"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.toneContrast || 50]}
+                        onValueChange={(value) => handleSettingChange("toneContrast", value[0])}
+                      />
+                      <div className="flex items-center justify-between mt-4">
+                        <Label htmlFor="patternScale">Pattern Scale</Label>
+                        <span className="text-sm text-muted-foreground">{settings.patternScale}%</span>
+                      </div>
+                      <Slider
+                        id="patternScale"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[settings.patternScale || 50]}
+                        onValueChange={(value) => handleSettingChange("patternScale", value[0])}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Classic printmaking style with tonal gradients.
+                      </p>
+                    </div>
+                  )}
+
                   {settings.style === "woodcut" && (
                     <div className="space-y-2 mt-4">
                       <div className="flex items-center justify-between">
@@ -865,6 +1128,182 @@ export default function ConvertPage() {
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Controls the angle and spacing of lines in the hatching effect.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "topographic" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="topographicDensity">Contour Density</Label>
+                        <span className="text-sm text-muted-foreground">{settings.topographicDensity}%</span>
+                      </div>
+                      <Slider
+                        id="topographicDensity"
+                        value={[settings.topographicDensity]}
+                        onValueChange={([val]) => handleSettingChange("topographicDensity", val)}
+                        min={10}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="topographicThickness">Line Thickness</Label>
+                        <span className="text-sm text-muted-foreground">{settings.topographicThickness}%</span>
+                      </div>
+                      <Slider
+                        id="topographicThickness"
+                        value={[settings.topographicThickness]}
+                        onValueChange={([val]) => handleSettingChange("topographicThickness", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="topographicSensitivity">Height Sensitivity</Label>
+                        <span className="text-sm text-muted-foreground">{settings.topographicSensitivity}%</span>
+                      </div>
+                      <Slider
+                        id="topographicSensitivity"
+                        value={[settings.topographicSensitivity]}
+                        onValueChange={([val]) => handleSettingChange("topographicSensitivity", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Creates elevation-like contour lines with adjustable density and thickness.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "blueprint" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="blueprintPrecision">Grid Precision</Label>
+                        <span className="text-sm text-muted-foreground">{settings.blueprintPrecision}%</span>
+                      </div>
+                      <Slider
+                        id="blueprintPrecision"
+                        value={[settings.blueprintPrecision]}
+                        onValueChange={([val]) => handleSettingChange("blueprintPrecision", val)}
+                        min={10}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="blueprintWeight">Line Weight</Label>
+                        <span className="text-sm text-muted-foreground">{settings.blueprintWeight}%</span>
+                      </div>
+                      <Slider
+                        id="blueprintWeight"
+                        value={[settings.blueprintWeight]}
+                        onValueChange={([val]) => handleSettingChange("blueprintWeight", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="blueprintDetail">Detail Level</Label>
+                        <span className="text-sm text-muted-foreground">{settings.blueprintDetail}%</span>
+                      </div>
+                      <Slider
+                        id="blueprintDetail"
+                        value={[settings.blueprintDetail]}
+                        onValueChange={([val]) => handleSettingChange("blueprintDetail", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Technical drawing style with precise lines and grid-like patterns.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "architectural" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="architecturalLineHierarchy">Line Hierarchy</Label>
+                        <span className="text-sm text-muted-foreground">{settings.architecturalLineHierarchy}%</span>
+                      </div>
+                      <Slider
+                        id="architecturalLineHierarchy"
+                        value={[settings.architecturalLineHierarchy]}
+                        onValueChange={([val]) => handleSettingChange("architecturalLineHierarchy", val)}
+                        min={10}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="architecturalDetailLevel">Detail Level</Label>
+                        <span className="text-sm text-muted-foreground">{settings.architecturalDetailLevel}%</span>
+                      </div>
+                      <Slider
+                        id="architecturalDetailLevel"
+                        value={[settings.architecturalDetailLevel]}
+                        onValueChange={([val]) => handleSettingChange("architecturalDetailLevel", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="architecturalScalePrecision">Scale Precision</Label>
+                        <span className="text-sm text-muted-foreground">{settings.architecturalScalePrecision}%</span>
+                      </div>
+                      <Slider
+                        id="architecturalScalePrecision"
+                        value={[settings.architecturalScalePrecision]}
+                        onValueChange={([val]) => handleSettingChange("architecturalScalePrecision", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Precise architectural drawing style with varying line weights and structured details.
+                      </p>
+                    </div>
+                  )}
+
+                  {settings.style === "gesture" && (
+                    <div className="space-y-2 mt-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="gestureLineFluidity">Line Fluidity</Label>
+                        <span className="text-sm text-muted-foreground">{settings.gestureLineFluidity}%</span>
+                      </div>
+                      <Slider
+                        id="gestureLineFluidity"
+                        value={[settings.gestureLineFluidity]}
+                        onValueChange={([val]) => handleSettingChange("gestureLineFluidity", val)}
+                        min={10}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="gestureStrokePressure">Stroke Pressure</Label>
+                        <span className="text-sm text-muted-foreground">{settings.gestureStrokePressure}%</span>
+                      </div>
+                      <Slider
+                        id="gestureStrokePressure"
+                        value={[settings.gestureStrokePressure]}
+                        onValueChange={([val]) => handleSettingChange("gestureStrokePressure", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <div className="flex items-center justify-between mt-2">
+                        <Label htmlFor="gestureMovementIntensity">Movement Intensity</Label>
+                        <span className="text-sm text-muted-foreground">{settings.gestureMovementIntensity}%</span>
+                      </div>
+                      <Slider
+                        id="gestureMovementIntensity"
+                        value={[settings.gestureMovementIntensity]}
+                        onValueChange={([val]) => handleSettingChange("gestureMovementIntensity", val)}
+                        min={1}
+                        max={100}
+                        step={1}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Expressive, flowing lines that capture movement and form with minimal detail.
                       </p>
                     </div>
                   )}
@@ -1141,6 +1580,18 @@ function applySketchEffect(
     woodcutBoldness?: number
     etchingDepth?: number
     conteSoftness?: number
+    scribbleDensity?: number
+    lineRandomness?: number
+    strokeDirection?: number
+    shapeComplexity?: number
+    edgeThreshold?: number
+    minShapeSize?: number
+    brushRoughness?: number
+    brushDirection?: number
+    edgeEmphasis?: number
+    grainDensity?: number
+    toneContrast?: number
+    patternScale?: number
   },
 ) {
   // Get image data
@@ -1180,19 +1631,507 @@ function applySketchEffect(
     case "woodcut":
       applyWoodcutEffect(ctx, edges, width, height, settings)
       break
-    case "etching":
-      applyEtchingEffect(ctx, edges, width, height, settings)
-      break
     case "conte":
       applyConteEffect(ctx, edges, width, height, settings)
       break
     case "stippling":
       applyStipplingEffect(ctx, edges, width, height, settings)
       break
-    case "hatching":
-      applyHatchingEffect(ctx, edges, width, height, settings)
+    case "scribble":
+      applyScribbleEffect(ctx, edges, width, height, settings)
+      break
+    case "geometric":
+      applyGeometricEffect(ctx, edges, width, height, settings)
+      break
+    case "lithograph":
+      applyLithographEffect(ctx, edges, width, height, settings)
+      break
+    case "zentangle":
+      applyZentangleEffect(ctx, edges, width, height, settings)
+      break
+    case "topographic":
+      applyTopographicEffect(ctx, edges, width, height, settings)
+      break
+    case "blueprint":
+      applyBlueprintEffect(ctx, edges, width, height, settings)
+      break
+    case "architectural":
+      applyArchitecturalEffect(ctx, edges, width, height, settings)
+      break
+    case "gesture":
+      applyGestureEffect(ctx, edges, width, height, settings)
+      break
+    case "wireframe":
+      applyWireframeEffect(ctx, edges, width, height, settings)
       break
   }
+}
+
+function applyTopographicEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { topographicDensity = 50, topographicThickness = 50, topographicSensitivity = 50 } = settings;
+  const density = topographicDensity / 100;
+  const thickness = topographicThickness / 100;
+  const sensitivity = topographicSensitivity / 100;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#000000';
+  
+  // Create contour lines
+  for (let y = 0; y < height; y += Math.max(2, Math.floor(10 / density))) {
+    let path = new Path2D();
+    let inLine = false;
+    
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const elevation = edges[idx] * sensitivity;
+      
+      if (elevation > 128) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        } else {
+          path.lineTo(x, y);
+        }
+      } else if (inLine) {
+        inLine = false;
+      }
+    }
+    
+    ctx.lineWidth = thickness * 2;
+    ctx.stroke(path);
+  }
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#000000';
+
+  // Create contour lines based on edge intensity
+  for (let y = 0; y < height; y += Math.max(2, Math.floor(10 * (1 - density)))) {
+    let path = new Path2D();
+    let inLine = false;
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      const intensity = edges[idx] / 255;
+
+      if (intensity > sensitivity) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        }
+        const yOffset = Math.sin(x * 0.1) * thickness * 5;
+        path.lineTo(x, y + yOffset);
+      } else if (inLine) {
+        inLine = false;
+      }
+    }
+
+    ctx.lineWidth = thickness * 2;
+    ctx.stroke(path);
+  }
+}
+
+function applyBlueprintEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { blueprintPrecision = 50, blueprintWeight = 50, blueprintDetail = 50 } = settings;
+  const precision = blueprintPrecision / 100;
+  const weight = blueprintWeight / 100;
+  const detail = blueprintDetail / 100;
+
+  // Set blueprint style background
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#1e40af';
+
+  // Draw grid
+  const gridSize = Math.max(10, Math.floor(50 * (1 - precision)));
+  ctx.lineWidth = 0.5;
+  
+  for (let x = 0; x < width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  
+  for (let y = 0; y < height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+
+  // Draw main lines
+  ctx.lineWidth = weight * 2;
+  for (let y = 0; y < height; y++) {
+    let path = new Path2D();
+    let inLine = false;
+    
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      if (edges[idx] > 128 * detail) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        } else {
+          path.lineTo(x, y);
+        }
+      } else if (inLine) {
+        inLine = false;
+      }
+    }
+    
+    ctx.stroke(path);
+  }
+
+  // Set blueprint style
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#0f3a75';
+
+  // Draw grid
+  const blueprintGridSize = Math.max(10, Math.floor(50 * (1 - precision)));
+  ctx.lineWidth = weight;
+
+  // Draw detail lines based on edges
+  for (let y = 0; y < height; y += blueprintGridSize) {
+    for (let x = 0; x < width; x += blueprintGridSize) {
+      const idx = y * width + x;
+      const intensity = edges[idx] / 255;
+
+      if (intensity > 1 - detail) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + gridSize * Math.random(), y + gridSize * Math.random());
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Add grid overlay
+  ctx.lineWidth = weight * 0.5;
+  for (let x = 0; x < width; x += gridSize * 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < height; y += gridSize * 2) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+}
+
+function applyZentangleEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { zentangleComplexity, zentangleSize, zentangleDensity } = settings;
+  const complexity = zentangleComplexity / 100;
+  const size = Math.max(10, Math.floor(50 * (1 - zentangleSize / 100)));
+  const density = zentangleDensity / 100;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#000000';
+
+  // Create grid for patterns
+  for (let y = 0; y < height; y += size) {
+    for (let x = 0; x < width; x += size) {
+      const idx = (y * width + x) * 4;
+      const intensity = edges[idx] / 255;
+
+      if (Math.random() < density) {
+        const pattern = Math.floor(Math.random() * 5); // 5 different pattern types
+        ctx.save();
+        ctx.translate(x, y);
+
+        switch (pattern) {
+          case 0: // Circles
+            for (let i = 0; i < size * complexity; i += 4) {
+              ctx.beginPath();
+              ctx.arc(size/2, size/2, i, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+            break;
+
+          case 1: // Crosshatch
+            for (let i = 0; i < size; i += 4) {
+              ctx.beginPath();
+              ctx.moveTo(0, i);
+              ctx.lineTo(size, i);
+              ctx.moveTo(i, 0);
+              ctx.lineTo(i, size);
+              ctx.stroke();
+            }
+            break;
+
+          case 2: // Spirals
+            ctx.beginPath();
+            for (let i = 0; i < size * complexity; i++) {
+              const angle = 0.1 * i;
+              const radius = i * 0.3;
+              const x = size/2 + radius * Math.cos(angle);
+              const y = size/2 + radius * Math.sin(angle);
+              i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            break;
+
+          case 3: // Dots
+            for (let i = 0; i < size; i += 4) {
+              for (let j = 0; j < size; j += 4) {
+                if (Math.random() < complexity) {
+                  ctx.beginPath();
+                  ctx.arc(i, j, 1, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              }
+            }
+            break;
+
+          case 4: // Waves
+            for (let i = 0; i < size; i += 4) {
+              ctx.beginPath();
+              ctx.moveTo(0, i);
+              for (let x = 0; x < size; x += 2) {
+                ctx.lineTo(x, i + Math.sin(x * 0.1) * 5 * complexity);
+              }
+              ctx.stroke();
+            }
+            break;
+        }
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function applyArchitecturalEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { architecturalLineHierarchy = 50, architecturalDetailLevel = 50, architecturalScalePrecision = 50 } = settings;
+  const hierarchy = architecturalLineHierarchy / 100;
+  const detailLevel = architecturalDetailLevel / 100;
+  const scalePrecision = architecturalScalePrecision / 100;
+
+  // Set background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw primary structural lines
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2 * hierarchy;
+  for (let y = 0; y < height; y += 2) {
+    let path = new Path2D();
+    let inLine = false;
+    
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      if (edges[idx] > 200) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        } else {
+          path.lineTo(x, y);
+        }
+      } else if (inLine) {
+        inLine = false;
+      }
+    }
+    
+    ctx.stroke(path);
+  }
+
+  // Draw secondary detail lines
+  ctx.lineWidth = 1 * detailLevel;
+  ctx.strokeStyle = '#666666';
+  for (let y = 0; y < height; y += 3) {
+    let path = new Path2D();
+    let inLine = false;
+    
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      if (edges[idx] > 150 && edges[idx] <= 200) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        } else {
+          path.lineTo(x, y);
+        }
+      } else if (inLine) {
+        inLine = false;
+      }
+    }
+    
+    ctx.stroke(path);
+  }
+
+  // Add scale indicators
+  const scaleSize = Math.max(20, Math.floor(100 * scalePrecision));
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  
+  for (let x = 0; x < width; x += scaleSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, height - 10);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+}
+
+function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { gestureLineFluidity = 50, gestureStrokePressure = 50, gestureMovementIntensity = 50 } = settings;
+  const fluidity = gestureLineFluidity / 100;
+  const pressure = gestureStrokePressure / 100;
+  const intensity = gestureMovementIntensity / 100;
+
+  // Set background and stroke properties
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#000000';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Enhanced gesture drawing with dynamic pressure
+  const lineSpacing = Math.max(2, Math.floor(6 * (1 - intensity)));
+  
+  // Primary gesture strokes
+  for (let y = 0; y < height; y += lineSpacing) {
+    let path = new Path2D();
+    let inLine = false;
+    let lastX = 0;
+    let lastY = y;
+    let strokePoints: [number, number][] = [];
+    
+    for (let x = 0; x < width; x += 2) {
+      const idx = (y * width + x) * 4;
+      const edge = edges[idx];
+      
+      if (edge > 100) { // Adjusted threshold for better line detection
+        const edgeIntensity = edge / 255;
+        if (!inLine) {
+          const startY = y + Math.sin(x * fluidity * 0.1) * (8 * fluidity);
+          path.moveTo(x, startY);
+          inLine = true;
+          lastX = x;
+          lastY = startY;
+          strokePoints = [[x, startY]];
+        } else {
+          // Dynamic offset based on edge intensity and fluidity
+          const offset = Math.sin(x * fluidity * 0.1) * (12 * fluidity) * edgeIntensity;
+          const newY = y + offset;
+
+          // Smooth curve generation with dynamic control points
+          if (strokePoints.length >= 2) {
+            const [px, py] = strokePoints[strokePoints.length - 1];
+            const [ppx, ppy] = strokePoints[strokePoints.length - 2];
+            
+            const cp1x = px + (x - ppx) * 0.5;
+            const cp1y = py + (newY - ppy) * 0.5;
+            
+            path.quadraticCurveTo(cp1x, cp1y, x, newY);
+          } else {
+            path.lineTo(x, newY);
+          }
+
+          strokePoints.push([x, newY]);
+          lastX = x;
+          lastY = newY;
+        }
+      } else if (inLine) {
+        // Smooth stroke ending
+        if (strokePoints.length >= 2) {
+          const [px, py] = strokePoints[strokePoints.length - 1];
+          path.lineTo(px + (x - px) * 0.5, py);
+        }
+        inLine = false;
+        
+        // Draw with dynamic pressure
+        ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity));
+        ctx.stroke(path);
+        
+        path = new Path2D();
+        strokePoints = [];
+      }
+    }
+    
+    if (inLine) {
+      ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity));
+      ctx.stroke(path);
+    }
+  }
+
+  // Secondary expressive strokes
+  ctx.globalAlpha = 0.4;
+  const expressiveStrokes = Math.floor(25 * intensity);
+  for (let i = 0; i < expressiveStrokes; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const idx = Math.floor(y) * width + Math.floor(x);
+    
+    if (edges[idx] > 120) {
+      const length = 25 + Math.random() * 35 * fluidity;
+      const angle = Math.random() * Math.PI * 2;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      
+      // Create flowing expressive strokes
+      const cp1x = x + Math.cos(angle) * length * 0.33;
+      const cp1y = y + Math.sin(angle) * length * 0.33;
+      const cp2x = x + Math.cos(angle) * length * 0.66;
+      const cp2y = y + Math.sin(angle) * length * 0.66;
+      const endX = x + Math.cos(angle) * length;
+      const endY = y + Math.sin(angle) * length;
+      
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+      ctx.lineWidth = Math.max(0.8, pressure * 4);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function applyWireframeEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedArray, width: number, height: number, settings: any) {
+  const { wireframeDensity, wireframeDepth, wireframePoints } = settings;
+  const density = wireframeDensity / 100;
+  const depth = wireframeDepth / 100;
+  const points = Math.floor(wireframePoints / 2);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = '#000000';
+
+  // Create wireframe mesh
+  const gridSize = Math.max(20, Math.floor(100 * (1 - density)));
+  const vertices: [number, number][] = [];
+
+  // Generate vertices based on edge detection
+  for (let y = 0; y < height; y += gridSize) {
+    for (let x = 0; x < width; x += gridSize) {
+      const idx = y * width + x;
+      const intensity = edges[idx] / 255;
+      
+      if (intensity > 0.3) {
+        const zOffset = intensity * depth * 20;
+        vertices.push([x + Math.random() * gridSize, y + Math.random() * gridSize + zOffset]);
+      }
+    }
+  }
+
+  // Connect nearby vertices
+  ctx.lineWidth = 0.5;
+  vertices.forEach(([x1, y1], i) => {
+    let connected = 0;
+    for (let j = i + 1; j < vertices.length && connected < points; j++) {
+      const [x2, y2] = vertices[j];
+      const distance = Math.hypot(x2 - x1, y2 - y1);
+      
+      if (distance < gridSize * 2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        connected++;
+      }
+    }
+  });
 }
 
 function detectEdges(imageData: ImageData, sensitivity: number): Uint8ClampedArray {
@@ -1349,6 +2288,255 @@ function applyPencilEffect(
     }
     ctx.globalAlpha = 1
   }
+}
+
+function applyScribbleEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    scribbleDensity?: number
+    lineRandomness?: number
+    strokeDirection?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const density = (settings.scribbleDensity || 50) / 100
+  const randomness = (settings.lineRandomness || 50) / 100
+  const baseDirection = ((settings.strokeDirection || 0) * Math.PI) / 180
+
+  ctx.strokeStyle = 'black'
+  ctx.lineCap = 'round'
+
+  for (let y = 0; y < height; y += 4) {
+    for (let x = 0; x < width; x += 4) {
+      const edge = edges[y * width + x]
+      if (edge > 20 && Math.random() < density) {
+        const intensity = edge * lineStrength
+        ctx.lineWidth = Math.random() * 2 + 0.5
+
+        // Create scribble lines with controlled randomness
+        const numLines = Math.floor(intensity / 50) + 1
+        for (let i = 0; i < numLines; i++) {
+          const angleVariation = (Math.random() - 0.5) * Math.PI * randomness
+          const angle = baseDirection + angleVariation
+          const length = Math.random() * 8 + 4
+
+          ctx.beginPath()
+          ctx.moveTo(x, y)
+          
+          // Create curved scribble effect
+          const cp1x = x + Math.cos(angle) * length * 0.5
+          const cp1y = y + Math.sin(angle) * length * 0.5
+          const cp2x = x + Math.cos(angle) * length * 0.8
+          const cp2y = y + Math.sin(angle) * length * 0.8
+          const endX = x + Math.cos(angle) * length
+          const endY = y + Math.sin(angle) * length
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY)
+          ctx.globalAlpha = intensity / 255 * 0.3
+          ctx.stroke()
+        }
+      }
+    }
+  }
+  ctx.globalAlpha = 1
+}
+
+function applyGeometricEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    shapeComplexity?: number
+    edgeThreshold?: number
+    minShapeSize?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const complexity = (settings.shapeComplexity || 50) / 100
+  const threshold = (settings.edgeThreshold || 50) / 100
+  const minSize = settings.minShapeSize || 10
+
+  ctx.strokeStyle = 'black'
+  ctx.lineWidth = 1
+
+  // Create geometric shapes based on edge detection
+  for (let y = 0; y < height; y += minSize) {
+    for (let x = 0; x < width; x += minSize) {
+      let avgEdge = 0
+      let count = 0
+
+      // Calculate average edge intensity for the area
+      for (let dy = 0; dy < minSize && y + dy < height; dy++) {
+        for (let dx = 0; dx < minSize && x + dx < width; dx++) {
+          avgEdge += edges[(y + dy) * width + (x + dx)]
+          count++
+        }
+      }
+      avgEdge /= count
+
+      if (avgEdge > threshold * 255) {
+        const size = minSize + Math.random() * minSize * complexity
+        const shapeType = Math.random()
+
+        ctx.beginPath()
+        if (shapeType < 0.4) {
+          // Triangle
+          const angle = Math.random() * Math.PI * 2
+          ctx.moveTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size)
+          for (let i = 1; i <= 3; i++) {
+            const a = angle + (i * Math.PI * 2) / 3
+            ctx.lineTo(x + Math.cos(a) * size, y + Math.sin(a) * size)
+          }
+        } else if (shapeType < 0.7) {
+          // Rectangle
+          ctx.rect(x, y, size, size)
+        } else {
+          // Circle
+          ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2)
+        }
+        ctx.globalAlpha = avgEdge / 255 * lineStrength
+        ctx.stroke()
+      }
+    }
+  }
+  ctx.globalAlpha = 1
+}
+
+function applyDryBrushEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    brushRoughness?: number
+    brushDirection?: number
+    edgeEmphasis?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const roughness = (settings.brushRoughness || 50) / 100
+  const baseDirection = ((settings.brushDirection || 0) * Math.PI) / 180
+  const emphasis = (settings.edgeEmphasis || 50) / 100
+
+  ctx.strokeStyle = 'black'
+  ctx.lineCap = 'square'
+
+  // Create dry brush strokes
+  for (let y = 0; y < height; y += 3) {
+    for (let x = 0; x < width; x += 3) {
+      const edge = edges[y * width + x]
+      if (edge > 20) {
+        const intensity = edge * lineStrength
+        const strokeLength = 10 + Math.random() * 20 * roughness
+
+        // Multiple strokes for dry brush effect
+        const numStrokes = Math.floor(3 + roughness * 3)
+        for (let i = 0; i < numStrokes; i++) {
+          const angleVar = (Math.random() - 0.5) * Math.PI * roughness
+          const angle = baseDirection + angleVar
+          
+          ctx.beginPath()
+          ctx.lineWidth = (Math.random() * 2 + 0.5) * (1 + emphasis)
+          
+          // Create broken, rough strokes
+          const segments = Math.floor(3 + roughness * 4)
+          let currentX = x
+          let currentY = y
+          
+          for (let j = 0; j < segments; j++) {
+            const segLength = strokeLength / segments
+            const nextX = currentX + Math.cos(angle) * segLength
+            const nextY = currentY + Math.sin(angle) * segLength
+            
+            if (Math.random() < 0.7) { // Create breaks in stroke
+              ctx.moveTo(currentX, currentY)
+              ctx.lineTo(nextX, nextY)
+            }
+            
+            currentX = nextX
+            currentY = nextY
+          }
+          
+          ctx.globalAlpha = intensity / 255 * 0.2
+          ctx.stroke()
+        }
+      }
+    }
+  }
+  ctx.globalAlpha = 1
+}
+
+function applyLithographEffect(
+  ctx: CanvasRenderingContext2D,
+  edges: Uint8ClampedArray,
+  width: number,
+  height: number,
+  settings: {
+    lineStrength: number
+    grainDensity?: number
+    toneContrast?: number
+    patternScale?: number
+  },
+) {
+  const lineStrength = settings.lineStrength / 100
+  const density = (settings.grainDensity || 50) / 100
+  const contrast = (settings.toneContrast || 50) / 100
+  const scale = (settings.patternScale || 50) / 100
+
+  ctx.fillStyle = 'black'
+  
+  // Create lithographic grain pattern
+  const patternSize = Math.max(2, Math.floor(4 * scale))
+  for (let y = 0; y < height; y += patternSize) {
+    for (let x = 0; x < width; x += patternSize) {
+      const edge = edges[y * width + x]
+      if (edge > 0) {
+        const intensity = edge * lineStrength
+        const adjustedIntensity = Math.pow(intensity / 255, 1 + contrast) // Adjust contrast
+        
+        // Create grainy texture
+        const grainCount = Math.floor(density * patternSize * patternSize)
+        for (let i = 0; i < grainCount; i++) {
+          const grainX = x + Math.random() * patternSize
+          const grainY = y + Math.random() * patternSize
+          const grainSize = Math.random() * 2 * scale
+          
+          ctx.globalAlpha = adjustedIntensity * 0.3
+          ctx.beginPath()
+          ctx.arc(grainX, grainY, grainSize, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        
+        // Add characteristic lithograph lines
+        if (Math.random() < adjustedIntensity * 0.3) {
+          ctx.beginPath()
+          ctx.lineWidth = 0.5
+          const angle = Math.random() * Math.PI
+          const lineLength = patternSize * 2
+          
+          ctx.moveTo(
+            x + Math.cos(angle) * lineLength,
+            y + Math.sin(angle) * lineLength
+          )
+          ctx.lineTo(
+            x - Math.cos(angle) * lineLength,
+            y - Math.sin(angle) * lineLength
+          )
+          
+          ctx.globalAlpha = adjustedIntensity * 0.2
+          ctx.stroke()
+        }
+      }
+    }
+  }
+  ctx.globalAlpha = 1
 }
 
 function applyCharcoalEffect(

@@ -98,6 +98,3 @@ Extending the model to support different artistic styles beyond sketching.
 
 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-
-
