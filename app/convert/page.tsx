@@ -1923,10 +1923,10 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // Enhanced gesture drawing with dynamic pressure
-  const lineSpacing = Math.max(2, Math.floor(6 * (1 - intensity)));
+  // Enhanced gesture drawing with improved visibility
+  const lineSpacing = Math.max(1, Math.floor(4 * (1 - intensity))); // Reduced spacing for denser strokes
   
-  // Primary gesture strokes
+  // Primary gesture strokes with increased visibility
   for (let y = 0; y < height; y += lineSpacing) {
     let path = new Path2D();
     let inLine = false;
@@ -1934,31 +1934,31 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
     let lastY = y;
     let strokePoints: [number, number][] = [];
     
-    for (let x = 0; x < width; x += 2) {
+    for (let x = 0; x < width; x += 1) { // Reduced step size for more detail
       const idx = (y * width + x) * 4;
       const edge = edges[idx];
       
-      if (edge > 100) { // Adjusted threshold for better line detection
+      if (edge > 80) { // Lower threshold for better line detection
         const edgeIntensity = edge / 255;
         if (!inLine) {
-          const startY = y + Math.sin(x * fluidity * 0.1) * (8 * fluidity);
+          const startY = y + Math.sin(x * fluidity * 0.15) * (10 * fluidity);
           path.moveTo(x, startY);
           inLine = true;
           lastX = x;
           lastY = startY;
           strokePoints = [[x, startY]];
         } else {
-          // Dynamic offset based on edge intensity and fluidity
-          const offset = Math.sin(x * fluidity * 0.1) * (12 * fluidity) * edgeIntensity;
+          // Enhanced dynamic offset for more expressive strokes
+          const offset = Math.sin(x * fluidity * 0.15) * (15 * fluidity) * edgeIntensity;
           const newY = y + offset;
 
-          // Smooth curve generation with dynamic control points
+          // Improved curve generation with enhanced control points
           if (strokePoints.length >= 2) {
             const [px, py] = strokePoints[strokePoints.length - 1];
             const [ppx, ppy] = strokePoints[strokePoints.length - 2];
             
-            const cp1x = px + (x - ppx) * 0.5;
-            const cp1y = py + (newY - ppy) * 0.5;
+            const cp1x = px + (x - ppx) * 0.6; // Increased control point influence
+            const cp1y = py + (newY - ppy) * 0.6;
             
             path.quadraticCurveTo(cp1x, cp1y, x, newY);
           } else {
@@ -1970,15 +1970,16 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
           lastY = newY;
         }
       } else if (inLine) {
-        // Smooth stroke ending
+        // Enhanced stroke ending
         if (strokePoints.length >= 2) {
           const [px, py] = strokePoints[strokePoints.length - 1];
-          path.lineTo(px + (x - px) * 0.5, py);
+          const endX = px + (x - px) * 0.7; // Smoother ending
+          path.lineTo(endX, py);
         }
         inLine = false;
         
-        // Draw with dynamic pressure
-        ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity));
+        // Increased line width for better visibility
+        ctx.lineWidth = Math.max(2, pressure * 8 * (1 + intensity));
         ctx.stroke(path);
         
         path = new Path2D();
@@ -1987,13 +1988,13 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
     }
     
     if (inLine) {
-      ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity));
+      ctx.lineWidth = Math.max(2, pressure * 8 * (1 + intensity));
       ctx.stroke(path);
     }
   }
 
-  // Secondary expressive strokes
-  ctx.globalAlpha = 0.4;
+  // Enhanced secondary expressive strokes
+  ctx.globalAlpha = 0.6; // Increased opacity
   const expressiveStrokes = Math.floor(25 * intensity);
   for (let i = 0; i < expressiveStrokes; i++) {
     const x = Math.random() * width;
