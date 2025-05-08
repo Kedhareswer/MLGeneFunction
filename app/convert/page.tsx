@@ -35,7 +35,7 @@ export default function ConvertPage() {
       "conte",
       "scribble",
       "gesture",
-      "lithograph",
+      "woodcut",
       "stippling"
     ],
     technical: [
@@ -45,7 +45,6 @@ export default function ConvertPage() {
       "topographic",
       "blueprint",
       "architectural",
-      "woodcut"
     ]
   }
 
@@ -71,10 +70,7 @@ export default function ConvertPage() {
     grainDensity: 50, // Density of grain pattern
     toneContrast: 50, // Contrast in tonal values
     patternScale: 50, // Scale of lithograph pattern
-    etchingDepth: 50, // Line depth
     stipplingDensity: 50, // Dot density for Stippling
-    hatchingAngle: 45, // Angle for Hatching lines
-    hatchingSpacing: 5, // Spacing for Hatching lines
     // Technical style settings
     detailedDensity: 50, // Line density
     crosshatchAngle: 45, // Angle variation
@@ -188,10 +184,7 @@ export default function ConvertPage() {
       grainDensity: 50,
       toneContrast: 50,
       patternScale: 50,
-      etchingDepth: 50,
       stipplingDensity: 50,
-      hatchingAngle: 45,
-      hatchingSpacing: 5,
       detailedDensity: 50,
       crosshatchAngle: 45,
       shapeComplexity: 50,
@@ -274,14 +267,10 @@ export default function ConvertPage() {
         return { ...baseSettings, gestureLineFluidity: settings.gestureLineFluidity, gestureStrokePressure: settings.gestureStrokePressure, gestureMovementIntensity: settings.gestureMovementIntensity }
       case "drybrush":
         return { ...baseSettings, brushRoughness: settings.brushRoughness, brushDirection: settings.brushDirection, edgeEmphasis: settings.edgeEmphasis }
-      case "lithograph":
-        return { ...baseSettings, grainDensity: settings.grainDensity, toneContrast: settings.toneContrast, patternScale: settings.patternScale }
-      case "etching":
-        return { ...baseSettings, etchingDepth: settings.etchingDepth }
       case "stippling":
         return { ...baseSettings, stipplingDensity: settings.stipplingDensity }
-      case "hatching":
-        return { ...baseSettings, hatchingAngle: settings.hatchingAngle, hatchingSpacing: settings.hatchingSpacing }
+      case "woodcut":
+        return { ...baseSettings, woodcutBoldness: settings.woodcutBoldness }
       
       // Technical Styles
       case "detailed":
@@ -296,8 +285,6 @@ export default function ConvertPage() {
         return { ...baseSettings, blueprintPrecision: settings.blueprintPrecision, blueprintWeight: settings.blueprintWeight, blueprintDetail: settings.blueprintDetail }
       case "architectural":
         return { ...baseSettings, architecturalLineHierarchy: settings.architecturalLineHierarchy, architecturalDetailLevel: settings.architecturalDetailLevel, architecturalScalePrecision: settings.architecturalScalePrecision }
-      case "woodcut":
-        return { ...baseSettings, woodcutBoldness: settings.woodcutBoldness }
       default:
         return baseSettings
     }
@@ -1038,26 +1025,6 @@ export default function ConvertPage() {
                     </div>
                   )}
 
-                  {settings.style === "etching" && (
-                    <div className="space-y-2 mt-4">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="etchingDepth">Line Depth</Label>
-                        <span className="text-sm text-muted-foreground">{settings.etchingDepth}%</span>
-                      </div>
-                      <Slider
-                        id="etchingDepth"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={[settings.etchingDepth || 50]}
-                        onValueChange={(value) => handleSettingChange("etchingDepth", value[0])}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Controls the depth and density of etching lines. Higher values create deeper, more pronounced
-                        line work.
-                      </p>
-                    </div>
-                  )}
 
                   {settings.style === "conte" && (
                     <div className="space-y-2 mt-4">
@@ -1096,38 +1063,6 @@ export default function ConvertPage() {
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Controls the density of dots in the stippling effect. Higher values create a denser, darker sketch.
-                      </p>
-                    </div>
-                  )}
-
-                  {settings.style === "hatching" && (
-                    <div className="space-y-2 mt-4 animate-fade-in">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="hatchingAngle">Hatching Angle</Label>
-                        <span className="text-sm text-muted-foreground">{settings.hatchingAngle}°</span>
-                      </div>
-                      <Slider
-                        id="hatchingAngle"
-                        value={[settings.hatchingAngle]}
-                        onValueChange={([val]) => handleSettingChange("hatchingAngle", val)}
-                        min={0}
-                        max={180}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="hatchingSpacing">Hatching Spacing</Label>
-                        <span className="text-sm text-muted-foreground">{settings.hatchingSpacing}px</span>
-                      </div>
-                      <Slider
-                        id="hatchingSpacing"
-                        value={[settings.hatchingSpacing]}
-                        onValueChange={([val]) => handleSettingChange("hatchingSpacing", val)}
-                        min={1}
-                        max={20}
-                        step={1}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Controls the angle and spacing of lines in the hatching effect.
                       </p>
                     </div>
                   )}
