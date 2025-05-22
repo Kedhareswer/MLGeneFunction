@@ -2,6 +2,15 @@
 
 ![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/MLGeneFunction?style=social&color=black) ![GitHub forks](https://img.shields.io/github/forks/Kedhareswer/MLGeneFunction?style=social&color=black) ![GitHub issues](https://img.shields.io/github/issues/Kedhareswer/MLGeneFunction?color=black) ![GitHub license](https://img.shields.io/github/license/Kedhareswer/MLGeneFunction?color=black)  
 
+Copyright (c) 2025 Kedhareswer
+
+This repository is made publicly visible for informational and research purposes only.
+You are NOT permitted to download, clone, pull, or use any content from this repository without prior, explicit, written permission from the repository owner.
+
+To request access or permission, please contact Kedhareswer via GitHub or the contact information provided in this repository.
+
+All unauthorized copying, distribution, or use is strictly prohibited.
+
 ## 🏆 Highlights  
 ✨ **Multiple Sketch Styles** – Pencil, charcoal, or a detailed sketch  
 ✨ **Customizable Parameters** – Adjust line strength, detail level, and shading intensity  
