@@ -38,5 +38,3 @@ Powered by deep learning, this tool leverages neural networks trained on the **C
 
 ## 🤝 Contribute & Join Us!  
 Love AI-powered creativity? Help us refine this project! Submit a **Pull Request**, suggest improvements, or share your feedback.  
-
-🔗 **GitHub Repository:** [Your Link Here]  
