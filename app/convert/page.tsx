@@ -1924,7 +1924,7 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
   ctx.lineJoin = 'round';
 
   // Enhanced gesture drawing with improved visibility
-  const lineSpacing = Math.max(1, Math.floor(4 * (1 - intensity))); // Reduced spacing for denser strokes
+  const lineSpacing = Math.max(1, Math.floor(3 * (1 - intensity))); // Reduced spacing for denser strokes
   
   // Primary gesture strokes with increased visibility
   for (let y = 0; y < height; y += lineSpacing) {
@@ -1938,7 +1938,7 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
       const idx = (y * width + x) * 4;
       const edge = edges[idx];
       
-      if (edge > 80) { // Lower threshold for better line detection
+      if (edge > 60) { // Lower threshold for better line detection
         const edgeIntensity = edge / 255;
         if (!inLine) {
           const startY = y + Math.sin(x * fluidity * 0.15) * (10 * fluidity);
@@ -1979,7 +1979,7 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
         inLine = false;
         
         // Increased line width for better visibility
-        ctx.lineWidth = Math.max(2, pressure * 8 * (1 + intensity));
+        ctx.lineWidth = Math.max(2.5, pressure * 10 * (1 + intensity));
         ctx.stroke(path);
         
         path = new Path2D();
@@ -1988,21 +1988,58 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
     }
     
     if (inLine) {
-      ctx.lineWidth = Math.max(2, pressure * 8 * (1 + intensity));
+      ctx.lineWidth = Math.max(2.5, pressure * 10 * (1 + intensity));
       ctx.stroke(path);
     }
   }
 
+  // Add secondary stroke layer for more completeness
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = '#222222';
+  const secondaryLineSpacing = Math.max(2, Math.floor(5 * (1 - intensity)));
+  
+  for (let y = secondaryLineSpacing/2; y < height; y += secondaryLineSpacing) {
+    let path = new Path2D();
+    let inLine = false;
+    
+    for (let x = 0; x < width; x += 1) {
+      const idx = (y * width + x) * 4;
+      const edge = edges[idx];
+      
+      if (edge > 70) {
+        if (!inLine) {
+          path.moveTo(x, y);
+          inLine = true;
+        } else {
+          const offset = Math.cos(x * fluidity * 0.2) * (8 * fluidity);
+          path.lineTo(x, y + offset);
+        }
+      } else if (inLine) {
+        inLine = false;
+        ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity * 0.5));
+        ctx.stroke(path);
+        path = new Path2D();
+      }
+    }
+    
+    if (inLine) {
+      ctx.lineWidth = Math.max(1.5, pressure * 6 * (1 + intensity * 0.5));
+      ctx.stroke(path);
+    }
+  }
+  ctx.globalAlpha = 1;
+
   // Enhanced secondary expressive strokes
-  ctx.globalAlpha = 0.6; // Increased opacity
-  const expressiveStrokes = Math.floor(25 * intensity);
+  ctx.globalAlpha = 0.8; // Increased opacity
+  ctx.strokeStyle = '#000000';
+  const expressiveStrokes = Math.floor(40 * intensity); // More strokes
   for (let i = 0; i < expressiveStrokes; i++) {
     const x = Math.random() * width;
     const y = Math.random() * height;
-    const idx = Math.floor(y) * width + Math.floor(x);
+    const idx = Math.floor(y) * width * 4 + Math.floor(x) * 4;
     
-    if (edges[idx] > 120) {
-      const length = 25 + Math.random() * 35 * fluidity;
+    if (edges[idx] > 90) {
+      const length = 30 + Math.random() * 50 * fluidity;
       const angle = Math.random() * Math.PI * 2;
       
       ctx.beginPath();
@@ -2017,10 +2054,75 @@ function applyGestureEffect(ctx: CanvasRenderingContext2D, edges: Uint8ClampedAr
       const endY = y + Math.sin(angle) * length;
       
       ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
-      ctx.lineWidth = Math.max(0.8, pressure * 4);
+      ctx.lineWidth = Math.max(1.2, pressure * 6);
       ctx.stroke();
     }
   }
+  
+  // Add dynamic accent strokes for emphasis
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = '#000000';
+  const accentStrokes = Math.floor(20 * fluidity);
+  for (let i = 0; i < accentStrokes; i++) {
+    // Find areas with strong edges for accent strokes
+    let maxEdge = 0;
+    let maxX = 0;
+    let maxY = 0;
+    
+    // Sample random points to find strong edges
+    for (let j = 0; j < 20; j++) {
+      const x = Math.floor(Math.random() * width);
+      const y = Math.floor(Math.random() * height);
+      const idx = (y * width + x) * 4;
+      
+      if (edges[idx] > maxEdge) {
+        maxEdge = edges[idx];
+        maxX = x;
+        maxY = y;
+      }
+    }
+    
+    if (maxEdge > 100) {
+      // Create dynamic accent stroke
+      const strokeLength = 20 + Math.random() * 40 * intensity;
+      const angle = Math.random() * Math.PI;
+      
+      ctx.beginPath();
+      ctx.moveTo(maxX, maxY);
+      
+      // Create varied stroke based on fluidity
+      if (fluidity > 0.6) {
+        // More flowing stroke with multiple curves
+        const points = [];
+        const numPoints = Math.floor(3 + fluidity * 3);
+        
+        for (let p = 0; p <= numPoints; p++) {
+          const t = p / numPoints;
+          const curveX = maxX + Math.cos(angle) * strokeLength * t;
+          const curveY = maxY + Math.sin(angle) * strokeLength * t;
+          const offset = Math.sin(t * Math.PI * 2) * (10 * fluidity);
+          
+          points.push([curveX, curveY + offset]);
+        }
+        
+        // Draw the flowing curve
+        for (let p = 1; p < points.length; p++) {
+          const [px, py] = points[p];
+          const [ppx, ppy] = points[p-1];
+          ctx.lineTo(px, py);
+        }
+      } else {
+        // Simpler stroke for lower fluidity
+        const endX = maxX + Math.cos(angle) * strokeLength;
+        const endY = maxY + Math.sin(angle) * strokeLength;
+        ctx.lineTo(endX, endY);
+      }
+      
+      ctx.lineWidth = Math.max(1.5, pressure * 8 * intensity);
+      ctx.stroke();
+    }
+  }
+  
   ctx.globalAlpha = 1;
 }
 
