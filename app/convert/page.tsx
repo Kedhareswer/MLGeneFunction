@@ -34,7 +34,6 @@ export default function ConvertPage() {
       "ink",
       "conte",
       "scribble",
-      "gesture",
       "woodcut",
       "stippling"
     ],
@@ -43,8 +42,6 @@ export default function ConvertPage() {
       "crosshatch",
       "geometric",
       "topographic",
-      "blueprint",
-      "architectural",
     ]
   }
 
@@ -61,9 +58,6 @@ export default function ConvertPage() {
     scribbleDensity: 50, // Density of scribble lines
     lineRandomness: 50, // Randomness of line placement
     strokeDirection: 0, // Direction of scribble strokes (0-360)
-    gestureLineFluidity: 50, // Line fluidity
-    gestureStrokePressure: 50, // Stroke pressure
-    gestureMovementIntensity: 50, // Movement intensity
     brushRoughness: 50, // Roughness of brush strokes
     brushDirection: 0, // Direction of brush strokes (0-360)
     edgeEmphasis: 50, // Emphasis on edges
@@ -80,12 +74,6 @@ export default function ConvertPage() {
     topographicDensity: 50, // Contour density
     topographicThickness: 50, // Line thickness
     topographicSensitivity: 50, // Height sensitivity
-    blueprintPrecision: 50, // Grid precision
-    blueprintWeight: 50, // Line weight
-    blueprintDetail: 50, // Detail level
-    architecturalLineHierarchy: 50, // Line hierarchy
-    architecturalDetailLevel: 50, // Detail level
-    architecturalScalePrecision: 50, // Scale precision
     woodcutBoldness: 50 // Edge boldness
   })
   const { toast } = useToast()
@@ -175,9 +163,6 @@ export default function ConvertPage() {
       scribbleDensity: 50,
       lineRandomness: 50,
       strokeDirection: 0,
-      gestureLineFluidity: 50,
-      gestureStrokePressure: 50,
-      gestureMovementIntensity: 50,
       brushRoughness: 50,
       brushDirection: 0,
       edgeEmphasis: 50,
@@ -193,12 +178,6 @@ export default function ConvertPage() {
       topographicDensity: 50,
       topographicThickness: 50,
       topographicSensitivity: 50,
-      blueprintPrecision: 50,
-      blueprintWeight: 50,
-      blueprintDetail: 50,
-      architecturalLineHierarchy: 50,
-      architecturalDetailLevel: 50,
-      architecturalScalePrecision: 50,
       woodcutBoldness: 50
     })
   }
@@ -263,8 +242,6 @@ export default function ConvertPage() {
         return { ...baseSettings, conteSoftness: settings.conteSoftness }
       case "scribble":
         return { ...baseSettings, scribbleDensity: settings.scribbleDensity, lineRandomness: settings.lineRandomness, strokeDirection: settings.strokeDirection }
-      case "gesture":
-        return { ...baseSettings, gestureLineFluidity: settings.gestureLineFluidity, gestureStrokePressure: settings.gestureStrokePressure, gestureMovementIntensity: settings.gestureMovementIntensity }
       case "drybrush":
         return { ...baseSettings, brushRoughness: settings.brushRoughness, brushDirection: settings.brushDirection, edgeEmphasis: settings.edgeEmphasis }
       case "stippling":
@@ -281,10 +258,6 @@ export default function ConvertPage() {
         return { ...baseSettings, shapeComplexity: settings.shapeComplexity, edgeThreshold: settings.edgeThreshold, minShapeSize: settings.minShapeSize }
       case "topographic":
         return { ...baseSettings, topographicDensity: settings.topographicDensity, topographicThickness: settings.topographicThickness, topographicSensitivity: settings.topographicSensitivity }
-      case "blueprint":
-        return { ...baseSettings, blueprintPrecision: settings.blueprintPrecision, blueprintWeight: settings.blueprintWeight, blueprintDetail: settings.blueprintDetail }
-      case "architectural":
-        return { ...baseSettings, architecturalLineHierarchy: settings.architecturalLineHierarchy, architecturalDetailLevel: settings.architecturalDetailLevel, architecturalScalePrecision: settings.architecturalScalePrecision }
       default:
         return baseSettings
     }
@@ -1107,138 +1080,6 @@ export default function ConvertPage() {
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Creates elevation-like contour lines with adjustable density and thickness.
-                      </p>
-                    </div>
-                  )}
-
-                  {settings.style === "blueprint" && (
-                    <div className="space-y-2 mt-4 animate-fade-in">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="blueprintPrecision">Grid Precision</Label>
-                        <span className="text-sm text-muted-foreground">{settings.blueprintPrecision}%</span>
-                      </div>
-                      <Slider
-                        id="blueprintPrecision"
-                        value={[settings.blueprintPrecision]}
-                        onValueChange={([val]) => handleSettingChange("blueprintPrecision", val)}
-                        min={10}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="blueprintWeight">Line Weight</Label>
-                        <span className="text-sm text-muted-foreground">{settings.blueprintWeight}%</span>
-                      </div>
-                      <Slider
-                        id="blueprintWeight"
-                        value={[settings.blueprintWeight]}
-                        onValueChange={([val]) => handleSettingChange("blueprintWeight", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="blueprintDetail">Detail Level</Label>
-                        <span className="text-sm text-muted-foreground">{settings.blueprintDetail}%</span>
-                      </div>
-                      <Slider
-                        id="blueprintDetail"
-                        value={[settings.blueprintDetail]}
-                        onValueChange={([val]) => handleSettingChange("blueprintDetail", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Technical drawing style with precise lines and grid-like patterns.
-                      </p>
-                    </div>
-                  )}
-
-                  {settings.style === "architectural" && (
-                    <div className="space-y-2 mt-4 animate-fade-in">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="architecturalLineHierarchy">Line Hierarchy</Label>
-                        <span className="text-sm text-muted-foreground">{settings.architecturalLineHierarchy}%</span>
-                      </div>
-                      <Slider
-                        id="architecturalLineHierarchy"
-                        value={[settings.architecturalLineHierarchy]}
-                        onValueChange={([val]) => handleSettingChange("architecturalLineHierarchy", val)}
-                        min={10}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="architecturalDetailLevel">Detail Level</Label>
-                        <span className="text-sm text-muted-foreground">{settings.architecturalDetailLevel}%</span>
-                      </div>
-                      <Slider
-                        id="architecturalDetailLevel"
-                        value={[settings.architecturalDetailLevel]}
-                        onValueChange={([val]) => handleSettingChange("architecturalDetailLevel", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="architecturalScalePrecision">Scale Precision</Label>
-                        <span className="text-sm text-muted-foreground">{settings.architecturalScalePrecision}%</span>
-                      </div>
-                      <Slider
-                        id="architecturalScalePrecision"
-                        value={[settings.architecturalScalePrecision]}
-                        onValueChange={([val]) => handleSettingChange("architecturalScalePrecision", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Precise architectural drawing style with varying line weights and structured details.
-                      </p>
-                    </div>
-                  )}
-
-                  {settings.style === "gesture" && (
-                    <div className="space-y-2 mt-4 animate-fade-in">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="gestureLineFluidity">Line Fluidity</Label>
-                        <span className="text-sm text-muted-foreground">{settings.gestureLineFluidity}%</span>
-                      </div>
-                      <Slider
-                        id="gestureLineFluidity"
-                        value={[settings.gestureLineFluidity]}
-                        onValueChange={([val]) => handleSettingChange("gestureLineFluidity", val)}
-                        min={10}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="gestureStrokePressure">Stroke Pressure</Label>
-                        <span className="text-sm text-muted-foreground">{settings.gestureStrokePressure}%</span>
-                      </div>
-                      <Slider
-                        id="gestureStrokePressure"
-                        value={[settings.gestureStrokePressure]}
-                        onValueChange={([val]) => handleSettingChange("gestureStrokePressure", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex items-center justify-between mt-2">
-                        <Label htmlFor="gestureMovementIntensity">Movement Intensity</Label>
-                        <span className="text-sm text-muted-foreground">{settings.gestureMovementIntensity}%</span>
-                      </div>
-                      <Slider
-                        id="gestureMovementIntensity"
-                        value={[settings.gestureMovementIntensity]}
-                        onValueChange={([val]) => handleSettingChange("gestureMovementIntensity", val)}
-                        min={1}
-                        max={100}
-                        step={1}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Expressive, flowing lines that capture movement and form with minimal detail.
                       </p>
                     </div>
                   )}
