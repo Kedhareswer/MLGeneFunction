@@ -27,7 +27,7 @@
 - [License](#license)
 
 ## 🎯 Overview
-Image to Sketch Converter is a modern web application that transforms regular images into artistic sketches. Built with Next.js and React, it provides a seamless user experience for image conversion w[...]
+Image to Sketch Converter is a modern web application that transforms regular images into artistic sketches. Built with Next.js and React, it provides a seamless user experience for image conversion with real-time processing and privacy-focused client-side operations.
 
 ### Key Benefits
 - 🎨 Transform photos into artistic sketches instantly
