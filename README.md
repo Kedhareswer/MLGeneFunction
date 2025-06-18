@@ -27,7 +27,7 @@
 - [License](#license)
 
 ## 🎯 Overview
-Image to Sketch Converter is a modern web application that transforms regular images into artistic sketches. Built with Next.js and React, it provides a seamless user experience for image conversion with real-time preview and customization options.
+Image to Sketch Converter is a modern web application that transforms regular images into artistic sketches. Built with Next.js and React, it provides a seamless user experience for image conversion w[...]
 
 ### Key Benefits
 - 🎨 Transform photos into artistic sketches instantly
@@ -155,8 +155,8 @@ sequenceDiagram
 ### Environment Setup
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/imagetosketch.git
-cd imagetosketch
+git clone https://github.com/Kedhareswer/MLGeneFunction.git
+cd MLGeneFunction
 ```
 
 2. Install dependencies:
@@ -332,9 +332,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-Made with ❤️ by [Your Name]
+Made with ❤️ by Kedhareswer
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/imagetosketch?style=social)](https://github.com/yourusername/imagetosketch/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/imagetosketch?style=social)](https://github.com/yourusername/imagetosketch/network/members)
-[![GitHub issues](https://img.shields.io/github/issues/yourusername/imagetosketch)](https://github.com/yourusername/imagetosketch/issues)
-</div> 
+[![GitHub stars](https://img.shields.io/github/stars/Kedhareswer/MLGeneFunction?style=social)](https://github.com/Kedhareswer/MLGeneFunction/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Kedhareswer/MLGeneFunction?style=social)](https://github.com/Kedhareswer/MLGeneFunction/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/Kedhareswer/MLGeneFunction)](https://github.com/Kedhareswer/MLGeneFunction/issues)
+</div>
